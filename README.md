@@ -13,7 +13,7 @@
 
 ## เปิดใช้งาน
 
-**ผ่านเว็บ:** https://USERNAME.github.io/docdesk/
+**ผ่านเว็บ:** https://Thanarich789.github.io/docdesk/
 **หรือดาวน์โหลด** `index.html` แล้วเปิดด้วยเบราว์เซอร์ในเครื่อง
 
 ---
