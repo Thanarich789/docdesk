@@ -1,0 +1,41 @@
+{
+  "id": "./",
+  "name": "DocDesk — โต๊ะทำงานเอกสาร",
+  "short_name": "DocDesk",
+  "description": "เครื่องมือจัดการ PDF Excel Word และรูปภาพ 17 รายการ ทำงานในเครื่องคุณเอง ไฟล์ไม่ออกจากเครื่อง",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6f7fb",
+  "theme_color": "#4B31E0",
+  "lang": "th",
+  "dir": "ltr",
+  "categories": ["productivity", "utilities", "business"],
+  "icons": [
+    {
+      "src": "docdesk-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "docdesk-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "docdesk-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "docdesk-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

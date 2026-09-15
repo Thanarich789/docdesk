@@ -2,8 +2,14 @@
 <html lang="th" data-theme="dark" data-skin="ocean">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22fvg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%237C5CFF%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%234B31E0%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22fva%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2322C3E6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2300B8D4%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%2256%22%20height%3D%2256%22%20rx%3D%2214%22%20fill%3D%22url%28%23fvg%29%22%2F%3E%3Cg%20transform%3D%22translate%280%2C0%29%20scale%281%29%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M18%2017h9a15%2015%200%200%201%200%2030h-9z%20M25%2024h2a8%208%200%200%201%200%2016h-2z%22%20fill%3D%22%23FFFFFF%22%2F%3E%3Cpath%20d%3D%22M38%2021a12.5%2012.5%200%200%201%200%2022%22%20fill%3D%22none%22%20stroke%3D%22%2322C3E6%22%20stroke-width%3D%225.5%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22fvg%22%20x1%3D%220.1%22%20y1%3D%220%22%20x2%3D%220.9%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238B6BFF%22%2F%3E%3Cstop%20offset%3D%220.55%22%20stop-color%3D%22%234B31E0%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%232E1B9E%22%2F%3E%3C%2FlinearGradient%3E%3CradialGradient%20id%3D%22fvs%22%20cx%3D%220.3%22%20cy%3D%220.15%22%20r%3D%220.75%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFFFFF%22%20stop-opacity%3D%220.28%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFFFFF%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22url%28%23fvg%29%22%2F%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22url%28%23fvs%29%22%2F%3E%3Cg%20transform%3D%22translate%289.600000000000001%2C9.600000000000001%29%20scale%280.7%29%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M18%2017h9a15%2015%200%200%201%200%2030h-9z%20M25%2024h2a8%208%200%200%201%200%2016h-2z%22%20fill%3D%22%23FFFFFF%22%2F%3E%3Cpath%20d%3D%22M38%2021a12.5%2012.5%200%200%201%200%2022%22%20fill%3D%22none%22%20stroke%3D%22%233BE0F0%22%20stroke-width%3D%225.5%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <meta name="theme-color" content="#4B31E0">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DocDesk">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DocDesk — โต๊ะทำงานเอกสารครบวงจร</title>
 <style>
@@ -67,8 +73,25 @@ header{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:
 .dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
 
 /* ---------- tool grid ---------- */
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:22px 0 8px}
-@media(min-width:700px){.grid{grid-template-columns:repeat(3,1fr)}}
+.grid{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0 8px}
+.grid>.tool{flex:1 1 calc(50% - 6px);min-width:0}
+#grid{margin:18px 0 8px}
+#grid .grid{margin:10px 0 0}
+.star{position:absolute;top:9px;right:9px;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;
+  cursor:pointer;color:var(--line);transition:color .16s ease,background .16s ease,transform .16s ease;z-index:2}
+.star svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linejoin:round}
+.star:hover{background:var(--surface);color:var(--muted);transform:scale(1.12)}
+.star.on{color:#F5A524}
+.star.on svg{fill:#F5A524}
+.star:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.cathead{display:flex;align-items:center;gap:9px;margin:24px 0 0}
+.cathead:first-child{margin-top:0}
+.cathead b{font-size:16px;font-weight:600;color:var(--ink)}
+.cathead span{font-size:12.5px;color:var(--muted)}
+.cathead i{flex:1;height:1px;background:var(--line);display:block}
+.cathead em{font-style:normal;width:22px;height:22px;flex:none;display:grid;place-items:center;color:var(--catc)}
+.cathead em svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+@media(min-width:700px){.grid>.tool{flex:1 1 calc(33.333% - 8px)}}
 .tool{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);
   padding:16px 14px 14px;text-align:left;cursor:pointer;color:var(--ink);
   transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
@@ -252,7 +275,7 @@ select.skinsel:hover{border-color:var(--brand)}
     <p>PDF · Excel · Word · รูปภาพ — ทุกเครื่องมือประมวลผลในเบราว์เซอร์ของคุณโดยตรง ไม่มีการอัปโหลดขึ้นเซิร์ฟเวอร์ ปิดหน้านี้เมื่อไหร่ ไฟล์หายจากหน่วยความจำทันที</p>
   </section>
 
-  <div class="grid" id="grid"></div>
+  <div id="grid"></div>
 
   <!-- ============ PANELS ============ -->
   <section class="panel" id="panel">
@@ -746,31 +769,86 @@ const ICON={
   shrink:'<path class="fl" d="M8.8 8.8h6.4v6.4H8.8z"/><path d="M8.8 8.8h6.4v6.4H8.8z"/><path d="M3.4 8V3.4h4.6"/><path d="m3.4 3.4 4.2 4.2"/><path d="M20.6 16v4.6H16"/><path d="m20.6 20.6-4.2-4.2"/>'
 };
 const TOOLS=[
- {id:"merge",  c:"--c-merge", ic:"merge", t:"รวมไฟล์",       s:"หลายไฟล์ PDF ให้เป็นไฟล์เดียว จัดลำดับได้",  d:"เลือกไฟล์ PDF ตั้งแต่ 2 ไฟล์ขึ้นไป แล้วจัดลำดับก่อนรวม"},
- {id:"split",  c:"--c-split", ic:"split", t:"แยกไฟล์",       s:"ดึงเฉพาะหน้าที่ต้องการ หรือแยกทุกหน้า",   d:"ระบุช่วงหน้าเพื่อดึงออกเป็นไฟล์ใหม่ หรือแยกทุกหน้าเป็น ZIP"},
- {id:"pages",  c:"--c-pages", ic:"pages", t:"จัดการหน้า",     s:"ลบ · เรียงใหม่ · หมุนหน้า พร้อมภาพตัวอย่าง",d:"ดูภาพทุกหน้า แล้วลบ เรียงลำดับ หรือหมุนได้ทีละหน้า"},
- {id:"img",    c:"--c-img",   ic:"img",   t:"รูป → PDF",     s:"รวมรูปภาพหลายใบเป็น PDF หน้าเดียวหรือหลายหน้า",d:"รองรับ JPG, PNG, WebP จัดลำดับรูปได้ก่อนแปลง"},
- {id:"render", c:"--c-render",ic:"render",t:"PDF → รูป",     s:"แปลงทุกหน้าเป็น JPG หรือ PNG ดาวน์โหลดเป็น ZIP",d:"เลือกความละเอียดและนามสกุลไฟล์ปลายทางได้"},
- {id:"mark",   c:"--c-mark",  ic:"mark",  t:"ลายน้ำ",        s:"ใส่ข้อความไทยทับทุกหน้า ปรับสี ความจาง องศา",d:"ข้อความภาษาไทยแสดงผลถูกต้องทุกตัวอักษร"},
- {id:"num",    c:"--c-num",   ic:"num",   t:"ใส่เลขหน้า",    s:"เลือกรูปแบบ ตำแหน่ง และข้ามหน้าปกได้",     d:"เช่น 1 · 1/10 · หน้า 1 จาก 10 วางได้ 3 ตำแหน่ง"},
- {id:"conv",   c:"--c-conv",  ic:"conv",  t:"แปลงรูปภาพ",    s:"HEIC/TIFF/AVIF ↔ JPG · ย่อขนาด · บีบอัด ทีละหลายไฟล์",d:"แปลงฟอร์แมต ย่อขนาด และลดขนาดไฟล์ พร้อมกันหลายรูป"},
- {id:"bg",     c:"--c-bg",    ic:"bg",    t:"ลบพื้นหลัง",    s:"ทำพื้นหลังโปร่งใส หรือเปลี่ยนเป็นสีใหม่",  d:"เห็นผลทันทีขณะปรับค่า แล้วบันทึกเป็น PNG โปร่งใสหรือใส่พื้นหลังใหม่"},
- {id:"zip",    c:"--c-zip",   ic:"zip",   t:"บีบอัด PDF",    s:"ลดขนาดไฟล์ให้ส่งอีเมลได้ เลือกได้ 3 ระดับ",d:"ลดขนาดไฟล์สแกน บอกขนาดก่อน–หลังให้ดูก่อนบันทึก"},
- {id:"lock",   c:"--c-lock",  ic:"lock",  t:"รหัสผ่าน",      s:"ใส่รหัสล็อกไฟล์ หรือปลดรหัสที่มีอยู่",    d:"เข้ารหัส AES-256 กำหนดสิทธิ์พิมพ์/คัดลอกได้ และปลดรหัสเมื่อรู้รหัสเดิม"},
- {id:"crop",   c:"--c-crop",  ic:"crop",  t:"ครอบตัดหน้า",   s:"ลากกรอบเลือกพื้นที่เองได้ เห็นผลทันที",d:"ลากกรอบบนภาพตัวอย่างเพื่อเลือกพื้นที่ที่จะเก็บไว้"},
- {id:"text",   c:"--c-text",  ic:"text",  t:"ดึงข้อความ",    s:"คัดข้อความออกมาเป็นไฟล์ .txt หรือคัดลอก",  d:"ดึงข้อความไทย-อังกฤษออกจาก PDF พร้อมคัดลอกไปใช้ต่อ"},
- {id:"edit",   c:"--c-edit",  ic:"edit",  t:"แก้ไข PDF",     s:"ปิดทับ · ไฮไลต์ · พิมพ์ข้อความ · เซ็นชื่อ · แปะรูป",d:"วางทับบนหน้าเดิมได้ทุกอย่าง ย้ายและย่อขยายได้ พร้อมปุ่มย้อนกลับ"},
- {id:"x2xl",   c:"--c-x2xl",  ic:"x2xl",  t:"PDF → Excel",   s:"ตรวจจับตารางในไฟล์ PDF แล้วบันทึกเป็น .xlsx หรือ .csv",d:"อ่านพิกัดตัวอักษรเพื่อจับเป็นตาราง ปรับความไวได้ ตัวเลขนำไปคำนวณต่อใน Excel ได้"},
- {id:"x2wd",   c:"--c-x2wd",  ic:"x2wd",  t:"PDF → Word",    s:"แปลงเป็นเอกสาร .doc แก้ไขได้ คงหัวข้อและย่อหน้า",d:"เลือกได้ทั้งโหมดข้อความไหลและโหมดคงตาราง พร้อมดูตัวอย่างก่อนบันทึก"},
- {id:"shrink", c:"--c-shrink",ic:"shrink",t:"ย่อขนาดไฟล์รูป",s:"กำหนดขนาดเป้าหมายเป็น KB ระบบไล่ปรับให้อัตโนมัติ",d:"เลือกขนาดที่ต้องการ เช่น ไม่เกิน 300 KB ระบบจะลดคุณภาพและย่อภาพให้จนได้ตามเป้า"}
+ {id:"merge", g:"pdf",  c:"--c-merge", ic:"merge", t:"รวมไฟล์",       s:"หลายไฟล์ PDF ให้เป็นไฟล์เดียว จัดลำดับได้",  d:"เลือกไฟล์ PDF ตั้งแต่ 2 ไฟล์ขึ้นไป แล้วจัดลำดับก่อนรวม"},
+ {id:"split", g:"pdf",  c:"--c-split", ic:"split", t:"แยกไฟล์",       s:"ดึงเฉพาะหน้าที่ต้องการ หรือแยกทุกหน้า",   d:"ระบุช่วงหน้าเพื่อดึงออกเป็นไฟล์ใหม่ หรือแยกทุกหน้าเป็น ZIP"},
+ {id:"pages", g:"pdf",  c:"--c-pages", ic:"pages", t:"จัดการหน้า",     s:"ลบ · เรียงใหม่ · หมุนหน้า พร้อมภาพตัวอย่าง",d:"ดูภาพทุกหน้า แล้วลบ เรียงลำดับ หรือหมุนได้ทีละหน้า"},
+ {id:"img", g:"conv",    c:"--c-img",   ic:"img",   t:"รูป → PDF",     s:"รวมรูปภาพหลายใบเป็น PDF หน้าเดียวหรือหลายหน้า",d:"รองรับ JPG, PNG, WebP จัดลำดับรูปได้ก่อนแปลง"},
+ {id:"render", g:"conv", c:"--c-render",ic:"render",t:"PDF → รูป",     s:"แปลงทุกหน้าเป็น JPG หรือ PNG ดาวน์โหลดเป็น ZIP",d:"เลือกความละเอียดและนามสกุลไฟล์ปลายทางได้"},
+ {id:"mark", g:"pdf",   c:"--c-mark",  ic:"mark",  t:"ลายน้ำ",        s:"ใส่ข้อความไทยทับทุกหน้า ปรับสี ความจาง องศา",d:"ข้อความภาษาไทยแสดงผลถูกต้องทุกตัวอักษร"},
+ {id:"num", g:"pdf",    c:"--c-num",   ic:"num",   t:"ใส่เลขหน้า",    s:"เลือกรูปแบบ ตำแหน่ง และข้ามหน้าปกได้",     d:"เช่น 1 · 1/10 · หน้า 1 จาก 10 วางได้ 3 ตำแหน่ง"},
+ {id:"conv", g:"img",   c:"--c-conv",  ic:"conv",  t:"แปลงรูปภาพ",    s:"HEIC/TIFF/AVIF ↔ JPG · ย่อขนาด · บีบอัด ทีละหลายไฟล์",d:"แปลงฟอร์แมต ย่อขนาด และลดขนาดไฟล์ พร้อมกันหลายรูป"},
+ {id:"bg", g:"img",     c:"--c-bg",    ic:"bg",    t:"ลบพื้นหลัง",    s:"ทำพื้นหลังโปร่งใส หรือเปลี่ยนเป็นสีใหม่",  d:"เห็นผลทันทีขณะปรับค่า แล้วบันทึกเป็น PNG โปร่งใสหรือใส่พื้นหลังใหม่"},
+ {id:"zip", g:"pdf",    c:"--c-zip",   ic:"zip",   t:"บีบอัด PDF",    s:"ลดขนาดไฟล์ให้ส่งอีเมลได้ เลือกได้ 3 ระดับ",d:"ลดขนาดไฟล์สแกน บอกขนาดก่อน–หลังให้ดูก่อนบันทึก"},
+ {id:"lock", g:"pdf",   c:"--c-lock",  ic:"lock",  t:"รหัสผ่าน",      s:"ใส่รหัสล็อกไฟล์ หรือปลดรหัสที่มีอยู่",    d:"เข้ารหัส AES-256 กำหนดสิทธิ์พิมพ์/คัดลอกได้ และปลดรหัสเมื่อรู้รหัสเดิม"},
+ {id:"crop", g:"pdf",   c:"--c-crop",  ic:"crop",  t:"ครอบตัดหน้า",   s:"ลากกรอบเลือกพื้นที่เองได้ เห็นผลทันที",d:"ลากกรอบบนภาพตัวอย่างเพื่อเลือกพื้นที่ที่จะเก็บไว้"},
+ {id:"text", g:"conv",   c:"--c-text",  ic:"text",  t:"ดึงข้อความ",    s:"คัดข้อความออกมาเป็นไฟล์ .txt หรือคัดลอก",  d:"ดึงข้อความไทย-อังกฤษออกจาก PDF พร้อมคัดลอกไปใช้ต่อ"},
+ {id:"edit", g:"pdf",   c:"--c-edit",  ic:"edit",  t:"แก้ไข PDF",     s:"ปิดทับ · ไฮไลต์ · พิมพ์ข้อความ · เซ็นชื่อ · แปะรูป",d:"วางทับบนหน้าเดิมได้ทุกอย่าง ย้ายและย่อขยายได้ พร้อมปุ่มย้อนกลับ"},
+ {id:"x2xl", g:"conv",   c:"--c-x2xl",  ic:"x2xl",  t:"PDF → Excel",   s:"ตรวจจับตารางในไฟล์ PDF แล้วบันทึกเป็น .xlsx หรือ .csv",d:"อ่านพิกัดตัวอักษรเพื่อจับเป็นตาราง ปรับความไวได้ ตัวเลขนำไปคำนวณต่อใน Excel ได้"},
+ {id:"x2wd", g:"conv",   c:"--c-x2wd",  ic:"x2wd",  t:"PDF → Word",    s:"แปลงเป็นเอกสาร .doc แก้ไขได้ คงหัวข้อและย่อหน้า",d:"เลือกได้ทั้งโหมดข้อความไหลและโหมดคงตาราง พร้อมดูตัวอย่างก่อนบันทึก"},
+ {id:"shrink", g:"img", c:"--c-shrink",ic:"shrink",t:"ย่อขนาดไฟล์รูป",s:"กำหนดขนาดเป้าหมายเป็น KB ระบบไล่ปรับให้อัตโนมัติ",d:"เลือกขนาดที่ต้องการ เช่น ไม่เกิน 300 KB ระบบจะลดคุณภาพและย่อภาพให้จนได้ตามเป้า"}
 ];
 const grid=$("#grid");
-TOOLS.forEach((t,i)=>{
-  const b=el("button","tool");b.style.setProperty("--tc","var("+t.c+")");b.style.animationDelay=(i*40)+"ms";
-  b.innerHTML='<span class="ico"><svg viewBox="0 0 24 24">'+ICON[t.ic]+'</svg></span><b>'+t.t+"</b><small>"+t.s+"</small>";
+
+/* หมวดหมู่เครื่องมือ */
+const CATS=[
+  {g:"fav", t:"รายการโปรด",  c:"--c-num",  s:"กดรูปดาวที่มุมการ์ดเพื่อเพิ่มหรือเอาออก",
+   ic:'<path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"/>'},
+  {g:"pdf", t:"จัดการ PDF",  c:"--c-merge",s:"รวม แยก จัดหน้า ลายน้ำ รหัสผ่าน",
+   ic:'<path d="M6.2 2.8h6.6L18.2 8.2v12.1a.9.9 0 0 1-.9.9H6.2a.9.9 0 0 1-.9-.9V3.7a.9.9 0 0 1 .9-.9z"/><path d="M12.8 2.8v5.4h5.4"/>'},
+  {g:"conv",t:"แปลงไฟล์",    c:"--c-x2xl", s:"PDF กับ Excel Word รูปภาพ ข้อความ",
+   ic:'<path d="M20.4 10.4a8.4 8.4 0 0 1-12.6 7"/><path d="M3.6 13.6a8.4 8.4 0 0 1 12.6-7"/><path d="m20.6 6.6.2 3.9-3.9.2"/><path d="m3.4 17.4-.2-3.9 3.9-.2"/>'},
+  {g:"img", t:"รูปภาพ",      c:"--c-conv", s:"แปลงนามสกุล ย่อขนาด ลบพื้นหลัง",
+   ic:'<path d="M3.4 5.2h17.2v13.6H3.4z"/><circle cx="8.4" cy="10" r="1.6"/><path d="m3.4 16.4 5-4.4 3.8 3.2 3-2.4 5.4 4.2"/>'}
+];
+
+/* รายการโปรดที่ผู้ใช้กดดาวไว้ (เก็บในเครื่องผู้ใช้เท่านั้น) */
+const FAV_KEY="docdesk_favs";
+function getFavs(){try{return JSON.parse(localStorage.getItem(FAV_KEY)||"[]");}catch(e){return[];}}
+function setFavs(a){try{localStorage.setItem(FAV_KEY,JSON.stringify(a));}catch(e){}}
+function isFav(id){return getFavs().indexOf(id)>=0;}
+function toggleFav(id){
+  const a=getFavs(), i=a.indexOf(id);
+  if(i>=0)a.splice(i,1);else a.push(id);        /* เรียงตามลำดับที่กดดาว */
+  setFavs(a);return i<0;
+}
+function favTools(){
+  const a=getFavs();
+  return a.map(id=>TOOLS.find(t=>t.id===id)).filter(Boolean);
+}
+const STAR_PATH='<path d="m12 3.6 2.6 5.3 5.8.85-4.2 4.1 1 5.8-5.2-2.75-5.2 2.75 1-5.8-4.2-4.1 5.8-.85z"/>';
+
+function card(t,i){
+  const b=el("button","tool");
+  b.style.setProperty("--tc","var("+t.c+")");b.style.animationDelay=(i*35)+"ms";
+  const on=isFav(t.id);
+  b.innerHTML='<span class="star'+(on?" on":"")+'" role="button" tabindex="0" aria-pressed="'+on+'" '+
+      'aria-label="'+(on?"เอาออกจากรายการโปรด":"เพิ่มในรายการโปรด")+'" title="'+(on?"เอาออกจากรายการโปรด":"เพิ่มในรายการโปรด")+'">'+
+      '<svg viewBox="0 0 24 24">'+STAR_PATH+'</svg></span>'+
+    '<span class="ico"><svg viewBox="0 0 24 24">'+ICON[t.ic]+'</svg></span><b>'+t.t+"</b><small>"+t.s+"</small>";
   b.onclick=()=>open(t);
-  grid.appendChild(b);
-});
+  const st=b.querySelector(".star");
+  const hit=e=>{e.stopPropagation();e.preventDefault();toggleFav(t.id);drawGrid();};
+  st.onclick=hit;
+  st.onkeydown=e=>{if(e.key==="Enter"||e.key===" ")hit(e);};
+  return b;
+}
+function drawGrid(){
+  grid.innerHTML="";
+  let n=0;
+  CATS.forEach(cat=>{
+    const list = cat.g==="fav" ? favTools() : TOOLS.filter(t=>t.g===cat.g);
+    if(!list.length) return;                         /* ครั้งแรกยังไม่มีประวัติ ก็ไม่ต้องแสดงหมวดใช้บ่อย */
+    const head=el("div","cathead");
+    head.style.setProperty("--catc","var("+cat.c+")");
+    head.innerHTML='<em><svg viewBox="0 0 24 24">'+cat.ic+'</svg></em><b>'+cat.t+'</b>'+
+      '<span>'+(cat.g==="fav"?cat.s:list.length+" รายการ")+'</span><i></i>';
+    grid.appendChild(head);
+    const box=el("div","grid");
+    list.forEach(t=>box.appendChild(card(t,n++)));
+    grid.appendChild(box);
+  });
+}
+drawGrid();
 
 const panel=$("#panel"),pBody=$("#pBody");
 $("#pBack").onclick=()=>{panel.classList.remove("on");window.scrollTo({top:0,behavior:"smooth"});};
@@ -2150,10 +2228,145 @@ BUILD.shrink=function(body){
   draw();
 };
 
+
+
+
 })();
 </script>
 
 
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   DocDesk PWA — ฝั่งหน้าเว็บ
+   • ลงทะเบียน Service Worker เพื่อใช้งานออฟไลน์
+   • ปุ่มติดตั้งแอปลงหน้าจอโฮม
+   • แจ้งเตือนเมื่อมีเวอร์ชันใหม่
+   ═══════════════════════════════════════════════════════════ */
+(function(){
+  var CSS = ''
+  + '.pwa-fab{position:fixed;right:16px;bottom:16px;z-index:9999;display:none;align-items:center;gap:8px;'
+  + 'font-family:"Chakra Petch","IBM Plex Sans Thai",system-ui,sans-serif;font-size:14px;font-weight:500;'
+  + 'padding:11px 18px;border-radius:999px;border:none;cursor:pointer;'
+  + 'background:#4B31E0;color:#fff;box-shadow:0 6px 20px rgba(75,49,224,.35)}'
+  + '.pwa-fab:hover{background:#3a25b8}'
+  + '.pwa-fab.on{display:inline-flex}'
+  + '.pwa-bar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(140px);z-index:10000;'
+  + 'display:flex;align-items:center;gap:12px;max-width:92vw;padding:12px 16px;border-radius:14px;'
+  + 'font-family:"Chakra Petch","IBM Plex Sans Thai",system-ui,sans-serif;font-size:14px;'
+  + 'background:#1b1826;color:#f2effa;box-shadow:0 10px 34px rgba(0,0,0,.35);transition:transform .32s cubic-bezier(.2,1.4,.5,1)}'
+  + '.pwa-bar.on{transform:translateX(-50%) translateY(0)}'
+  + '.pwa-bar button{font-family:inherit;font-size:13px;font-weight:500;padding:7px 14px;border-radius:9px;border:none;cursor:pointer}'
+  + '.pwa-bar .go{background:#4ED88A;color:#06281a}'
+  + '.pwa-bar .later{background:rgba(255,255,255,.12);color:#f2effa}'
+  + '.pwa-tip{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:10000;max-width:92vw;'
+  + 'padding:14px 18px;border-radius:14px;font-family:"Chakra Petch","IBM Plex Sans Thai",system-ui,sans-serif;'
+  + 'font-size:14px;line-height:1.7;background:#1b1826;color:#f2effa;box-shadow:0 10px 34px rgba(0,0,0,.35);display:none}'
+  + '.pwa-tip.on{display:block}'
+  + '.pwa-tip button{margin-top:10px;font-family:inherit;font-size:13px;padding:7px 14px;border-radius:9px;'
+  + 'border:none;cursor:pointer;background:rgba(255,255,255,.12);color:#f2effa}';
+
+  var style = document.createElement('style');
+  style.textContent = CSS;
+  document.head.appendChild(style);
+
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  /* ---------- ปุ่มติดตั้งแอป ---------- */
+  var fab = document.createElement('button');
+  fab.className = 'pwa-fab';
+  fab.type = 'button';
+  fab.textContent = '⬇ ติดตั้งเป็นแอป';
+  document.body.appendChild(fab);
+
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferred = e;
+    if (!standalone && localStorage.getItem('pwa-install-hide') !== '1') fab.classList.add('on');
+  });
+  fab.addEventListener('click', function(){
+    if (deferred) {
+      deferred.prompt();
+      deferred.userChoice.then(function(){ deferred = null; fab.classList.remove('on'); });
+    } else if (isIOS) {
+      showIOSTip();
+    }
+  });
+  window.addEventListener('appinstalled', function(){
+    fab.classList.remove('on');
+    try { localStorage.setItem('pwa-install-hide','1'); } catch(e){}
+  });
+
+  /* iPhone ไม่มีปุ่มติดตั้งอัตโนมัติ ต้องบอกวิธีทำเอง */
+  function showIOSTip(){
+    var tip = document.createElement('div');
+    tip.className = 'pwa-tip on';
+    tip.innerHTML = '<b>วิธีติดตั้งบน iPhone</b><br>' +
+      '1. กดปุ่มแชร์ <span style="font-size:16px">⬆️</span> ด้านล่างจอ<br>' +
+      '2. เลื่อนหา “เพิ่มไปยังหน้าจอโฮม”<br>' +
+      '3. กด “เพิ่ม” มุมขวาบน<br>' +
+      '<small style="opacity:.75">ต้องเปิดด้วย Safari เท่านั้น</small><br>' +
+      '<button type="button">เข้าใจแล้ว</button>';
+    document.body.appendChild(tip);
+    tip.querySelector('button').onclick = function(){ tip.remove(); };
+  }
+  if (isIOS && !standalone && localStorage.getItem('pwa-install-hide') !== '1') {
+    setTimeout(function(){ fab.classList.add('on'); }, 2500);
+  }
+
+  /* ---------- Service Worker ---------- */
+  if (!('serviceWorker' in navigator)) return;
+
+  var bar = document.createElement('div');
+  bar.className = 'pwa-bar';
+  bar.innerHTML = '<span>มีเวอร์ชันใหม่พร้อมใช้งาน</span>' +
+                  '<button type="button" class="go">อัปเดตเลย</button>' +
+                  '<button type="button" class="later">ไว้ก่อน</button>';
+  document.body.appendChild(bar);
+
+  var waitingWorker = null;
+  var reloading = false;
+
+  bar.querySelector('.later').onclick = function(){ bar.classList.remove('on'); };
+  bar.querySelector('.go').onclick = function(){
+    bar.classList.remove('on');
+    if (waitingWorker) waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+  };
+
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js', { scope: './' }).then(function(reg){
+      /* มีเวอร์ชันใหม่รออยู่แล้วตั้งแต่เปิดหน้า */
+      if (reg.waiting && navigator.serviceWorker.controller) {
+        waitingWorker = reg.waiting;
+        bar.classList.add('on');
+      }
+      /* ตรวจพบเวอร์ชันใหม่ระหว่างใช้งาน */
+      reg.addEventListener('updatefound', function(){
+        var nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', function(){
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            waitingWorker = nw;
+            bar.classList.add('on');
+          }
+        });
+      });
+      /* ตรวจหาเวอร์ชันใหม่ทุกครั้งที่กลับมาที่หน้านี้ */
+      document.addEventListener('visibilitychange', function(){
+        if (!document.hidden) { try { reg.update(); } catch(e){} }
+      });
+    }).catch(function(){ /* ลงทะเบียนไม่สำเร็จ โปรแกรมยังใช้งานได้ปกติ */ });
+  });
+})();
+</script>
 
 </body>
 </html>
