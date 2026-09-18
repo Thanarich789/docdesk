@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ขยายภาพให้ใหญ่และชัดขึ้น</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF0F6; --panel:#FFFFFF; --ink:#181F35; --muted:#5D6A85; --line:#D6DBE6;
+  --accent:#5B34D6; --accent-ink:#FFFFFF; --glow:#00B2A9; --ok:#138A5B; --warn:#B4400F;
+  font-family:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12131C; --panel:#1B1D2A; --ink:#E9ECF7; --muted:#99A2BC; --line:#2C3043;
+  --accent:#9B7BFF; --accent-ink:#0B0B14; --glow:#3FE0D0; --ok:#3CC98E; --warn:#FF8A50; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#12131C; --panel:#1B1D2A; --ink:#E9ECF7; --muted:#99A2BC; --line:#2C3043;
+  --accent:#9B7BFF; --accent-ink:#0B0B14; --glow:#3FE0D0; --ok:#3CC98E; --warn:#FF8A50; color-scheme:dark;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55}
+button,select,input{font:inherit;color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:1.85rem;margin:0;font-weight:700;letter-spacing:-.01em;position:relative;z-index:0}
+h1 .hl{position:relative;white-space:nowrap}
+h1 .hl::after{content:"";position:absolute;left:-3px;right:-3px;bottom:.08em;height:.42em;background:var(--glow);opacity:.38;border-radius:99px;z-index:-1;transform:rotate(-1deg)}
+.sub{margin:6px 0 0;color:var(--muted);max-width:62ch}
+.privacy{font-size:.85rem;color:var(--ok)}
+.layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+@media (max-width:880px){.layout{grid-template-columns:1fr}}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;min-width:0}
+.view{position:relative;height:min(64vh,620px);min-height:300px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(45deg,color-mix(in srgb,var(--line) 45%,transparent) 25%,transparent 25%,transparent 75%,color-mix(in srgb,var(--line) 45%,transparent) 75%) 0 0/18px 18px,
+  linear-gradient(45deg,color-mix(in srgb,var(--line) 45%,transparent) 25%,transparent 25%,transparent 75%,color-mix(in srgb,var(--line) 45%,transparent) 75%) 9px 9px/18px 18px,
+  color-mix(in srgb,var(--line) 18%,var(--panel))}
+/* ตัวเลื่อนเทียบก่อน–หลัง */
+.scroller{position:absolute;inset:0;overflow:auto;display:flex;padding:10px;overscroll-behavior:contain}
+.compare{position:relative;line-height:0;margin:auto;flex:none;touch-action:none;user-select:none;box-shadow:0 1px 8px rgba(0,0,0,.18)}
+.compare canvas{display:block;width:100%;height:100%}
+.compare.zoomed{cursor:grab}
+.compare.panning{cursor:grabbing}
+.compare.pixel canvas{image-rendering:pixelated}
+.zoombar{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:2px;padding:4px;border-radius:12px;z-index:2;
+  background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.zoombar button{border:0;background:transparent;min-width:34px;height:32px;border-radius:8px;cursor:pointer;font-size:1rem;padding:0 8px}
+.zoombar button:hover:not(:disabled){background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.zoombar button:disabled{opacity:.4;cursor:not-allowed}
+.zoombar #zoomPct{min-width:58px;font-size:.85rem;font-variant-numeric:tabular-nums}
+.zoombar .sep{width:1px;height:20px;background:var(--line);margin:0 2px}
+.compare .after{position:absolute;inset:0;width:100%;height:100%;clip-path:inset(0 0 0 var(--split,50%))}
+.compare .bar{position:absolute;top:0;bottom:0;left:var(--split,50%);width:2px;background:var(--glow);box-shadow:0 0 0 1px rgba(0,0,0,.35);cursor:ew-resize}
+.compare .bar::after{content:"⇆";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;
+  background:var(--glow);color:#06221F;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.tagl,.tagr{position:absolute;top:8px;font-size:.75rem;padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--ink) 72%,transparent);color:var(--panel)}
+.tagl{left:8px}.tagr{right:8px}
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:22px;background:var(--panel);border:2px dashed var(--line);border-radius:10px;cursor:pointer}
+.empty strong{font-size:1.1rem}.empty small{color:var(--muted)}
+.busy{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:color-mix(in srgb,var(--panel) 74%,transparent);backdrop-filter:blur(2px);z-index:3;font-weight:600}
+.bar2{width:min(320px,70%);height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar2 i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--glow));transition:width .15s}
+.hidden{display:none!important}
+.stagebar{display:flex;justify-content:space-between;gap:8px;margin-top:10px;color:var(--muted);font-size:.85rem;flex-wrap:wrap}
+.sizes{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:.82rem}
+.chip b{font-variant-numeric:tabular-nums}
+.chip.new{border-color:var(--accent);color:var(--accent)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;position:sticky;top:12px}
+.help{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:12px 14px;background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
+.help header{display:flex;align-items:center;justify-content:space-between;margin:0}
+.help h2{margin:0;font-size:.95rem}
+.help .toggle{border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:.82rem}
+.help ol{margin:8px 0 0;padding-left:1.15em;font-size:.86rem;line-height:1.6}
+.help .tip{margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--line);color:var(--muted);font-size:.8rem}
+.help.collapsed .body{display:none}
+.group h2{font-size:.95rem;margin:0 0 8px;font-weight:600}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg.two{grid-template-columns:repeat(2,1fr)}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.seg button{border:0;background:transparent;padding:8px 2px;border-radius:7px;cursor:pointer;font-size:.88rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel);font-weight:600}
+.range{display:flex;align-items:center;gap:10px}
+.range input{flex:1;accent-color:var(--accent)}
+.sizeline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.sizeline .px{font-weight:600;font-variant-numeric:tabular-nums}
+.sizeline .cap{font-size:.78rem;color:var(--warn)}
+.scaler{display:flex;align-items:center;gap:10px}
+.scaler input[type=range]{flex:1;accent-color:var(--accent);height:26px}
+.scaler .num{width:74px;display:flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:10px;padding:4px 6px;background:var(--panel)}
+.scaler .num input{width:100%;border:0;background:transparent;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;padding:2px 0}
+.scaler .num input::-webkit-outer-spin-button,.scaler .num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.scaler .num span{color:var(--muted);font-size:.85rem}
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.switchrow .txt{font-size:.92rem;display:flex;align-items:center;gap:6px}
+.switch{position:relative;width:46px;height:26px;flex:none;border:0;border-radius:99px;background:var(--line);cursor:pointer;transition:background .18s;padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .18s}
+.switch[aria-checked="true"]{background:var(--accent)}
+.switch[aria-checked="true"]::after{transform:translateX(20px)}
+.bgopts{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.quick{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.quick button{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:3px 12px;font-size:.82rem;cursor:pointer}
+.quick button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.range output{min-width:44px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem}
+.lbl{font-size:.85rem;display:block;margin-bottom:2px}
+.hint{font-size:.8rem;color:var(--muted);margin:6px 0 0}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:.9rem}
+.btn:hover:not(:disabled){border-color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;padding:12px;font-size:1rem;width:100%}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s;max-width:92vw;z-index:10}
+.toast.show{opacity:1}.toast.err{background:var(--warn);color:#fff}
+kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:.78rem}
+body.embed{background:transparent}
+body.embed .wrap{padding:0;max-width:none}
+body.embed header{display:none}
+body.embed .view{height:var(--boxh,480px)}
+body.embed .panel{position:static}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>ขยายภาพให้<span class="hl">ใหญ่และชัด</span>ขึ้น</h1>
+      <p class="sub">ขยายภาพเล็กหรือภาพเบลอให้ใหญ่ขึ้นสูงสุด 4 เท่า พร้อมลับคม ลดจุดรบกวน และปรับแสงอัตโนมัติ</p>
+    </div>
+    <div class="privacy">🔒 ประมวลผลในเครื่อง ไม่อัปโหลดรูป</div>
+  </header>
+
+  <div class="layout">
+    <section class="stage">
+      <div class="view" id="view">
+        <div class="scroller hidden" id="scroller">
+        <div class="compare" id="compare">
+          <canvas id="beforeC"></canvas>
+          <canvas id="afterC" class="after"></canvas>
+          <span class="tagl">ก่อน</span><span class="tagr">หลัง</span>
+          <div class="bar" id="bar"></div>
+        </div>
+        </div>
+        <div class="zoombar hidden" id="zoombar" role="group" aria-label="ย่อขยายการดูภาพ">
+          <button type="button" id="zoomOut" title="ย่อ (−)" aria-label="ย่อ">−</button>
+          <button type="button" id="zoomPct" title="ดูขนาดจริง 100%">100%</button>
+          <button type="button" id="zoomIn" title="ขยาย (+)" aria-label="ขยาย">+</button>
+          <span class="sep"></span>
+          <button type="button" id="zoomFit" title="พอดีจอ (0)">⤢ พอดีจอ</button>
+        </div>
+        <div class="empty" id="empty">
+          <div style="font-size:2.3rem">🔎</div>
+          <strong>ลากรูปมาวาง หรือคลิกเพื่อเลือก</strong>
+          <small>รองรับ JPG · PNG · WebP · วางจากคลิปบอร์ดด้วย <kbd>Ctrl</kbd>+<kbd>V</kbd> ได้</small>
+          <button class="btn" id="demoBtn" type="button">ลองกับภาพตัวอย่าง</button>
+        </div>
+        <div class="busy hidden" id="busy">
+          <span id="busyText">กำลังขยายภาพ…</span>
+          <div class="bar2"><i id="busyFill"></i></div>
+        </div>
+      </div>
+      <div class="sizes" id="sizes"></div>
+      <div class="stagebar"><span id="info">ยังไม่มีรูป</span><span id="info2"></span></div>
+      <input type="file" id="file" accept="image/*" hidden>
+    </section>
+
+    <aside class="panel">
+      <section class="help" id="helpBox">
+        <header><h2>📖 วิธีใช้</h2><button type="button" class="toggle" id="helpToggle" aria-expanded="true">ซ่อน</button></header>
+        <div class="body">
+          <ol>
+            <li>เลือกรูป (ลากวาง / คลิก / <kbd>Ctrl</kbd>+<kbd>V</kbd>)</li>
+            <li><b>เลื่อนแถบขนาด</b> (หรือพิมพ์ตัวเลขในช่อง ×) — ดูขนาดพิกเซลที่จะได้ด้านบนแถบ · 2 เท่าพอสำหรับงานทั่วไป</li>
+            <li>เลือก <b>ชนิดภาพ</b> ให้ตรงงาน ระบบตั้งค่าที่เหมาะให้เอง</li>
+            <li>กด <b>✨ ขยายภาพ</b> แล้ว<b>ลากวงกลม ⇆ กลางภาพ</b>เพื่อเทียบก่อน–หลัง</li>
+            <li>อยากดูใกล้ ๆ กดปุ่ม <b>− +</b> มุมขวาล่าง (หรือ <kbd>Ctrl</kbd>+ล้อเมาส์) ตอนซูมอยู่ให้ลากภาพเพื่อเลื่อนดู</li>
+            <li>อยากได้พื้นหลังใส เปิดสวิตช์ <b>🪟 พื้นหลังโปร่งใส</b> (ใช้กับพื้นหลังสีพื้น เช่น โลโก้)</li>
+            <li>พอใจแล้วกดบันทึก PNG (คมสุด/เก็บความโปร่งใส) หรือ JPG (ไฟล์เล็ก พื้นหลังจะเป็นสีขาว)</li>
+          </ol>
+          <p class="tip">💡 ภาพต้นฉบับยิ่งเล็ก ยิ่งขยายได้จำกัด — ขยาย 2 เท่าจะได้ผลดีที่สุด · ถ้าภาพมีเม็ดนอยส์ ให้เพิ่ม “ลดจุดรบกวน” ก่อนลับคม</p>
+        </div>
+      </section>
+
+      <div class="group">
+        <h2>ขนาดที่ต้องการ</h2>
+        <div class="sizeline">
+          <span>ขนาด</span><span class="px" id="pxOut">—</span><span class="cap hidden" id="capNote">👑 เกินขีดจำกัด</span>
+        </div>
+        <div class="scaler">
+          <input type="range" id="scale" min="1" max="4" step="0.05" value="2" aria-label="ขนาดที่ต้องการ (เท่า)">
+          <label class="num"><input type="number" id="scaleNum" min="1" max="4" step="0.1" value="2" aria-label="จำนวนเท่า"><span>×</span></label>
+        </div>
+        <div class="quick" id="quick">
+          <button type="button" data-s="1">เท่าเดิม</button>
+          <button type="button" data-s="1.5">1.5×</button>
+          <button type="button" data-s="2" aria-pressed="true">2×</button>
+          <button type="button" data-s="3">3×</button>
+          <button type="button" data-s="4">4×</button>
+        </div>
+        <p class="hint" id="sizeHint">—</p>
+      </div>
+
+      <div class="group">
+        <h2>ชนิดภาพ (ตั้งค่าอัตโนมัติ)</h2>
+        <div class="seg three" id="presetSeg">
+          <button type="button" data-p="photo" aria-pressed="true">📷 ภาพถ่าย</button>
+          <button type="button" data-p="doc" aria-pressed="false">📄 เอกสาร</button>
+          <button type="button" data-p="logo" aria-pressed="false">🎯 โลโก้</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>ปรับเอง</h2>
+        <label class="lbl" for="sharpen">ความคม</label>
+        <div class="range"><input type="range" id="sharpen" min="0" max="150" value="60"><output id="sharpenOut">60</output></div>
+        <label class="lbl" for="denoise" style="margin-top:8px">ลดจุดรบกวน</label>
+        <div class="range"><input type="range" id="denoise" min="0" max="3" value="0"><output id="denoiseOut">ปิด</output></div>
+        <label class="lbl" for="levels" style="margin-top:8px">ปรับแสงอัตโนมัติ</label>
+        <div class="range"><input type="range" id="levels" min="0" max="100" value="0"><output id="levelsOut">0%</output></div>
+        <label class="lbl" for="sat" style="margin-top:8px">ความอิ่มสี</label>
+        <div class="range"><input type="range" id="sat" min="-40" max="40" value="0"><output id="satOut">0</output></div>
+      </div>
+
+      <div class="group">
+        <div class="switchrow">
+          <span class="txt">🪟 พื้นหลังโปร่งใส</span>
+          <button type="button" class="switch" id="transSw" role="switch" aria-checked="false" aria-label="พื้นหลังโปร่งใส"></button>
+        </div>
+        <p class="hint">ลบพื้นหลังสีพื้นออก ได้ไฟล์ PNG โปร่งใส — เหมาะกับโลโก้ ตราบริษัท รูปติดบัตรพื้นเรียบ</p>
+        <div class="bgopts hidden" id="bgOpts">
+          <label class="lbl" for="bgTol">ความไวสีพื้นหลัง</label>
+          <div class="range"><input type="range" id="bgTol" min="5" max="120" value="32"><output id="bgTolOut">32</output></div>
+          <label class="lbl" for="bgFeather" style="margin-top:8px">ความนุ่มของขอบ</label>
+          <div class="range"><input type="range" id="bgFeather" min="0" max="6" value="1"><output id="bgFeatherOut">1 px</output></div>
+          <p class="hint" id="bgResult">พื้นหลังต้องเป็นสีพื้นและติดขอบภาพ · พื้นหลังเป็นภาพถ่ายซับซ้อน ให้ใช้เครื่องมือ “ลบวัตถุในภาพ” โหมด AI แทน</p>
+        </div>
+      </div>
+
+      <button class="btn primary" id="runBtn" disabled>✨ ขยายภาพ</button>
+
+      <div class="group">
+        <h2>บันทึก</h2>
+        <label class="lbl" for="quality">คุณภาพ JPG</label>
+        <select id="quality">
+          <option value="0.75">เล็ก — ส่งอีเมล/ไลน์</option>
+          <option value="0.88" selected>ปกติ</option>
+          <option value="0.95">คมชัดสูง</option>
+        </select>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="savePng" disabled>PNG</button>
+          <button class="btn" id="saveJpg" disabled>JPG</button>
+        </div>
+        <button class="btn" id="newBtn" style="margin-top:8px;width:100%">📂 เปลี่ยนรูป</button>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+/* =========================================================
+   Image Upscale core — ขยายภาพให้ใหญ่และคมขึ้น
+   - Lanczos3 resampling (คมกว่าการขยายปกติของเบราว์เซอร์)
+   - Unsharp mask แบบมีเกณฑ์ (ลับคมโดยไม่ดึงนอยส์ขึ้นมา)
+   - ลดจุดรบกวนแบบรักษาขอบ / ปรับแสงอัตโนมัติ / ความอิ่มสี
+   ทำงานบน RGBA array ล้วน ไม่พึ่ง DOM (ทดสอบใน Node ได้)
+   ========================================================= */
+(function (root) {
+  'use strict';
+  const clamp = v => v < 0 ? 0 : v > 255 ? 255 : v;
+
+  /* ---------- Lanczos3 (แยกแกน x และ y เพื่อความเร็ว) ---------- */
+  function lanczosWeights(srcLen, dstLen, a) {
+    const scale = dstLen / srcLen;
+    const support = scale < 1 ? a / scale : a;       // ย่อ = ขยายรัศมีฟิลเตอร์ กันภาพแตก
+    const rows = [];
+    for (let d = 0; d < dstLen; d++) {
+      const center = (d + 0.5) / scale - 0.5;
+      const i0 = Math.max(0, Math.ceil(center - support));
+      const i1 = Math.min(srcLen - 1, Math.floor(center + support));
+      const idx = [], wts = [];
+      let sum = 0;
+      for (let i = i0; i <= i1; i++) {
+        let x = (i - center) * (scale < 1 ? scale : 1);
+        let wgt;
+        if (x === 0) wgt = 1;
+        else if (x <= -a || x >= a) wgt = 0;
+        else { const px = Math.PI * x; wgt = a * Math.sin(px) * Math.sin(px / a) / (px * px); }
+        if (wgt === 0) continue;
+        idx.push(i); wts.push(wgt); sum += wgt;
+      }
+      for (let k = 0; k < wts.length; k++) wts[k] /= sum || 1;
+      rows.push({ idx, wts });
+    }
+    return rows;
+  }
+  function resize(src, w, h, W, H, a) {
+    a = a || 3;
+    const rx = lanczosWeights(w, W, a), ry = lanczosWeights(h, H, a);
+    // คูณสีด้วย alpha ก่อน (premultiply) เพื่อไม่ให้ขอบภาพโปร่งใสมีขลิบสีแปลก ๆ
+    const tmp = new Float32Array(W * h * 4);
+    for (let y = 0; y < h; y++) {
+      const srow = y * w * 4, trow = y * W * 4;
+      for (let x = 0; x < W; x++) {
+        const { idx, wts } = rx[x];
+        let r = 0, g = 0, b = 0, al = 0;
+        for (let k = 0; k < idx.length; k++) {
+          const p = srow + idx[k] * 4, wgt = wts[k], av = src[p + 3] / 255;
+          r += src[p] * av * wgt; g += src[p + 1] * av * wgt; b += src[p + 2] * av * wgt; al += src[p + 3] * wgt;
+        }
+        const t = trow + x * 4; tmp[t] = r; tmp[t + 1] = g; tmp[t + 2] = b; tmp[t + 3] = al;
+      }
+    }
+    const out = new Uint8ClampedArray(W * H * 4);
+    for (let y = 0; y < H; y++) {
+      const { idx, wts } = ry[y];
+      for (let x = 0; x < W; x++) {
+        let r = 0, g = 0, b = 0, al = 0;
+        for (let k = 0; k < idx.length; k++) {
+          const t = (idx[k] * W + x) * 4, wgt = wts[k];
+          r += tmp[t] * wgt; g += tmp[t + 1] * wgt; b += tmp[t + 2] * wgt; al += tmp[t + 3] * wgt;
+        }
+        const o = (y * W + x) * 4, av = al / 255;
+        out[o] = clamp(av > 0.003 ? r / av : 0);
+        out[o + 1] = clamp(av > 0.003 ? g / av : 0);
+        out[o + 2] = clamp(av > 0.003 ? b / av : 0);
+        out[o + 3] = clamp(al);
+      }
+    }
+    return { data: out, w: W, h: H };
+  }
+
+  /* ---------- box blur 3 รอบ ≈ gaussian (เร็วมากด้วย sliding window) ---------- */
+  function boxBlurChannel(src, w, h, r) {
+    if (r < 1) return src.slice();
+    let a = src.slice(), b = new Float32Array(w * h);   // สำเนาก่อน ไม่แตะข้อมูลต้นฉบับ
+    for (let pass = 0; pass < 3; pass++) {
+      // แนวนอน
+      for (let y = 0; y < h; y++) {
+        const row = y * w;
+        let sum = 0;
+        for (let x = -r; x <= r; x++) sum += a[row + Math.min(w - 1, Math.max(0, x))];
+        for (let x = 0; x < w; x++) {
+          b[row + x] = sum / (2 * r + 1);
+          sum -= a[row + Math.min(w - 1, Math.max(0, x - r))];
+          sum += a[row + Math.min(w - 1, Math.max(0, x + r + 1))];
+        }
+      }
+      // แนวตั้ง
+      const c = a; a = b; b = c;
+      for (let x = 0; x < w; x++) {
+        let sum = 0;
+        for (let y = -r; y <= r; y++) sum += a[Math.min(h - 1, Math.max(0, y)) * w + x];
+        for (let y = 0; y < h; y++) {
+          b[y * w + x] = sum / (2 * r + 1);
+          sum -= a[Math.min(h - 1, Math.max(0, y - r)) * w + x];
+          sum += a[Math.min(h - 1, Math.max(0, y + r + 1)) * w + x];
+        }
+      }
+      const c2 = a; a = b; b = c2;
+    }
+    return a;
+  }
+
+  /* ---------- Unsharp mask: คมขึ้นเฉพาะที่เป็นรายละเอียดจริง ---------- */
+  function unsharp(rgba, w, h, amount, radius, threshold) {
+    if (amount <= 0) return rgba;
+    const r = Math.max(1, Math.round(radius || 1));
+    const thr = threshold == null ? 3 : threshold;
+    const lum = new Float32Array(w * h);
+    for (let i = 0, p = 0; i < lum.length; i++, p += 4) lum[i] = 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2];
+    const blur = boxBlurChannel(lum, w, h, r);
+    for (let i = 0, p = 0; i < lum.length; i++, p += 4) {
+      const diff = lum[i] - blur[i];
+      if (Math.abs(diff) < thr) continue;           // เรียบ = ปล่อยไว้ (ไม่ดึงนอยส์)
+      const add = diff * amount;
+      rgba[p] = clamp(rgba[p] + add);
+      rgba[p + 1] = clamp(rgba[p + 1] + add);
+      rgba[p + 2] = clamp(rgba[p + 2] + add);
+    }
+    return rgba;
+  }
+
+  /* ---------- ลดจุดรบกวนแบบรักษาขอบ (bilateral อย่างง่าย) ---------- */
+  function denoise(rgba, w, h, strength) {
+    if (strength <= 0) return rgba;
+    const r = strength >= 2 ? 2 : 1;
+    const sigma = 12 + strength * 9;              // ต่างสีมากกว่านี้ = คนละพื้นผิว ไม่เกลี่ยข้ามกัน
+    const out = new Uint8ClampedArray(rgba.length);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const p = (y * w + x) * 4;
+      let wr = 0, wg = 0, wb = 0, sw = 0;
+      const cr = rgba[p], cg = rgba[p + 1], cb = rgba[p + 2];
+      for (let dy = -r; dy <= r; dy++) {
+        const yy = y + dy; if (yy < 0 || yy >= h) continue;
+        for (let dx = -r; dx <= r; dx++) {
+          const xx = x + dx; if (xx < 0 || xx >= w) continue;
+          const q = (yy * w + xx) * 4;
+          const d = Math.abs(rgba[q] - cr) + Math.abs(rgba[q + 1] - cg) + Math.abs(rgba[q + 2] - cb);
+          const wgt = d < sigma ? 1 - d / sigma : 0;
+          if (!wgt) continue;
+          wr += rgba[q] * wgt; wg += rgba[q + 1] * wgt; wb += rgba[q + 2] * wgt; sw += wgt;
+        }
+      }
+      out[p] = sw ? wr / sw : cr; out[p + 1] = sw ? wg / sw : cg; out[p + 2] = sw ? wb / sw : cb; out[p + 3] = rgba[p + 3];
+    }
+    return out;
+  }
+
+  /* ---------- ปรับแสงอัตโนมัติ (ยืดช่วงสว่างจาก percentile) ---------- */
+  function autoLevels(rgba, w, h, strength) {
+    if (!strength) return rgba;
+    const hist = new Uint32Array(256);
+    for (let p = 0; p < rgba.length; p += 4) hist[(0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2]) | 0]++;
+    const total = w * h, cut = total * 0.004;
+    let lo = 0, hi = 255, acc = 0;
+    for (let i = 0; i < 256; i++) { acc += hist[i]; if (acc > cut) { lo = i; break; } }
+    acc = 0;
+    for (let i = 255; i >= 0; i--) { acc += hist[i]; if (acc > cut) { hi = i; break; } }
+    if (hi - lo < 20) return rgba;
+    const lut = new Uint8ClampedArray(256);
+    for (let i = 0; i < 256; i++) {
+      const stretched = (i - lo) * 255 / (hi - lo);
+      lut[i] = clamp(i + (stretched - i) * strength);
+    }
+    for (let p = 0; p < rgba.length; p += 4) { rgba[p] = lut[rgba[p]]; rgba[p + 1] = lut[rgba[p + 1]]; rgba[p + 2] = lut[rgba[p + 2]]; }
+    return rgba;
+  }
+
+  /* ---------- ความอิ่มสี ---------- */
+  function saturate(rgba, amount) {
+    if (!amount) return rgba;
+    const f = 1 + amount / 100;
+    for (let p = 0; p < rgba.length; p += 4) {
+      const l = 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2];
+      rgba[p] = clamp(l + (rgba[p] - l) * f);
+      rgba[p + 1] = clamp(l + (rgba[p + 1] - l) * f);
+      rgba[p + 2] = clamp(l + (rgba[p + 2] - l) * f);
+    }
+    return rgba;
+  }
+
+  /* ---------- ลบพื้นหลังให้โปร่งใส ----------
+     ไล่จากขอบภาพเข้ามา: พิกเซลที่สีใกล้เคียง "สีพื้นขอบภาพ" และต่อเนื่องถึงขอบ = พื้นหลัง
+     tolerance 5–120 (ต่างได้กี่ระดับสีต่อช่อง) · feather = ความนุ่มของขอบเป็นพิกเซล        */
+  function removeBackground(rgba, w, h, opt) {
+    opt = opt || {};
+    const tol = opt.tolerance == null ? 32 : opt.tolerance;
+    const feather = opt.feather == null ? 1 : opt.feather;
+    // สีพื้น = ค่ามัธยฐานของพิกเซลรอบขอบภาพ
+    const sr = [], sg = [], sb = [];
+    const push = (x, y) => { const p = (y * w + x) * 4; sr.push(rgba[p]); sg.push(rgba[p + 1]); sb.push(rgba[p + 2]); };
+    for (let x = 0; x < w; x += Math.max(1, (w / 120) | 0)) { push(x, 0); push(x, h - 1); }
+    for (let y = 0; y < h; y += Math.max(1, (h / 120) | 0)) { push(0, y); push(w - 1, y); }
+    const med = arr => { const a = arr.slice().sort((p, q) => p - q); return a[a.length >> 1]; };
+    const br = med(sr), bg2 = med(sg), bb = med(sb);
+    const near = p => Math.abs(rgba[p] - br) <= tol && Math.abs(rgba[p + 1] - bg2) <= tol && Math.abs(rgba[p + 2] - bb) <= tol;
+
+    // flood fill จากขอบภาพ
+    const bgMask = new Uint8Array(w * h), q = new Int32Array(w * h);
+    let qh = 0, qt = 0;
+    const seed = i => { if (!bgMask[i] && near(i * 4)) { bgMask[i] = 1; q[qt++] = i; } };
+    for (let x = 0; x < w; x++) { seed(x); seed((h - 1) * w + x); }
+    for (let y = 0; y < h; y++) { seed(y * w); seed(y * w + w - 1); }
+    while (qh < qt) {
+      const i = q[qh++], x = i % w, y = (i / w) | 0;
+      if (x > 0) seed(i - 1);
+      if (x < w - 1) seed(i + 1);
+      if (y > 0) seed(i - w);
+      if (y < h - 1) seed(i + w);
+    }
+    let removed = 0;
+    for (let i = 0; i < w * h; i++) if (bgMask[i]) removed++;
+    // alpha = 0 ที่พื้นหลัง แล้วเกลี่ยขอบให้นุ่ม
+    const alpha = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) alpha[i] = bgMask[i] ? 0 : 255;
+    const soft = feather > 0 ? boxBlurChannel(alpha, w, h, Math.max(1, Math.round(feather))) : alpha;
+    for (let i = 0, p = 0; i < w * h; i++, p += 4) {
+      const a = bgMask[i] ? Math.min(rgba[p + 3], soft[i]) : rgba[p + 3];
+      rgba[p + 3] = clamp(a);
+    }
+    return { removed, ratio: removed / (w * h), bg: [br, bg2, bb] };
+  }
+
+  /* ---------- ท่อประมวลผลหลัก ----------
+     opt: { scale, denoise 0-3, sharpen 0-150, levels 0-1, saturation -50..50, maxSide }
+     onStep(t) รายงานความคืบหน้า 0..1                                     */
+  async function enhance(rgba, w, h, opt, onStep) {
+    opt = opt || {};
+    const step = async (t) => { if (onStep) onStep(t); await new Promise(r => setTimeout(r, 0)); };
+    const scale = opt.scale || 2;
+    const maxSide = opt.maxSide || 6000;
+    let W = Math.round(w * scale), H = Math.round(h * scale);
+    const cap = Math.min(1, maxSide / Math.max(W, H));
+    W = Math.max(1, Math.round(W * cap)); H = Math.max(1, Math.round(H * cap));
+
+    await step(0.05);
+    let data = rgba;
+    if (opt.denoise) { data = denoise(data, w, h, opt.denoise); await step(0.25); }
+    // ขยายด้วย Lanczos3 (แบ่งเป็น 2 ก้าวเมื่อขยายเกิน 2 เท่า ให้ขอบเนียนกว่า)
+    let cur = { data, w, h };
+    if (W > w) {
+      const steps = (W / w) > 2.2 ? 2 : 1;
+      for (let s = 1; s <= steps; s++) {
+        const tw = Math.round(w + (W - w) * s / steps), th = Math.round(h + (H - h) * s / steps);
+        cur = resize(cur.data, cur.w, cur.h, tw, th);
+        await step(0.25 + 0.4 * s / steps);
+      }
+    } else {
+      cur = resize(cur.data, cur.w, cur.h, W, H);
+      await step(0.65);
+    }
+    if (opt.levels) autoLevels(cur.data, cur.w, cur.h, opt.levels);
+    await step(0.75);
+    if (opt.sharpen) {
+      const radius = scale >= 3 ? 2 : 1;
+      unsharp(cur.data, cur.w, cur.h, opt.sharpen / 100, radius, opt.sharpenThreshold == null ? 3 : opt.sharpenThreshold);
+    }
+    await step(0.9);
+    if (opt.saturation) saturate(cur.data, opt.saturation);
+    if (opt.transparent) {
+      cur.info = removeBackground(cur.data, cur.w, cur.h, { tolerance: opt.bgTolerance, feather: opt.bgFeather });
+      await step(0.98);
+    }
+    await step(1);
+    return cur;
+  }
+
+  root.ImageUp = { enhance, resize, unsharp, denoise, autoLevels, saturate, removeBackground };
+  if (typeof module !== 'undefined') module.exports = root.ImageUp;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* =========================================================
+   Image Upscaler UI — เลือกรูป → ขยาย → เทียบก่อน/หลัง → บันทึก
+   ========================================================= */
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const MAX_IN = 3000;        // ย่อภาพเข้าก่อนถ้าใหญ่มาก (กันหน่วง)
+  const MAX_OUT = 6000;       // ด้านยาวสุดของผลลัพธ์
+  const EMBED = new URLSearchParams(location.search).has('embed');
+  const beforeC = $('beforeC'), afterC = $('afterC');
+  const bctx = beforeC.getContext('2d', { willReadFrequently: true });
+  const actx = afterC.getContext('2d', { willReadFrequently: true });
+
+  const PRESETS = {
+    photo: { sharpen: 60, denoise: 1, levels: 0, sat: 0 },
+    doc:   { sharpen: 110, denoise: 0, levels: 60, sat: -10 },
+    logo:  { sharpen: 90, denoise: 0, levels: 0, sat: 0 },
+  };
+  const ZMIN = 0.05, ZMAX = 8, ZSTEP = 1.25;
+  const state = { zoom: 1, fitMode: true, pan: null, img: null, w: 0, h: 0, out: null, busy: false, scale: 2, preset: 'photo',
+                  sharpen: 60, denoise: 1, levels: 0, sat: 0, name: 'image', srcBytes: 0,
+                  transparent: false, bgTol: 32, bgFeather: 1 };
+
+  let toastT;
+  function toast(msg, err) {
+    const t = $('toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
+    clearTimeout(toastT); toastT = setTimeout(() => t.className = 'toast', err ? 4000 : 2200);
+  }
+  const fmtBytes = b => b >= 1048576 ? (b / 1048576).toFixed(2) + ' MB' : Math.round(b / 1024) + ' KB';
+
+  /* ---------- เปิดรูป ---------- */
+  function loadSrc(src, name, bytes) {
+    const im = new Image();
+    im.onload = () => {
+      const s = Math.min(1, MAX_IN / Math.max(im.naturalWidth, im.naturalHeight));
+      const w = Math.max(1, Math.round(im.naturalWidth * s)), h = Math.max(1, Math.round(im.naturalHeight * s));
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const cx = c.getContext('2d', { willReadFrequently: true });
+      cx.imageSmoothingQuality = 'high'; cx.drawImage(im, 0, 0, w, h);
+      state.img = c; state.w = w; state.h = h; state.out = null;
+      state.name = (name || 'image').replace(/\.[^.]+$/, '');
+      state.srcBytes = bytes || 0;
+      // แสดงภาพเดิมไว้ทั้งสองฝั่งก่อน
+      beforeC.width = afterC.width = w; beforeC.height = afterC.height = h;
+      bctx.drawImage(c, 0, 0); actx.drawImage(c, 0, 0);
+      $('scroller').classList.remove('hidden'); $('zoombar').classList.remove('hidden'); $('empty').classList.add('hidden');
+      setSplit(50); zoomFit();
+      $('info').textContent = `${state.name} · ${w}×${h} px` + (s < 1 ? ' (ย่อจากต้นฉบับ)' : '');
+      $('info2').textContent = '';
+      updateSizes(); refresh();
+      if (src.startsWith('blob:')) URL.revokeObjectURL(src);
+    };
+    im.onerror = () => toast('เปิดไฟล์นี้ไม่ได้ — ใช้ภาพ JPG, PNG หรือ WebP', true);
+    im.src = src;
+  }
+  function loadFile(f) {
+    if (!f || !f.type.startsWith('image/')) { toast('ไฟล์นี้ไม่ใช่รูปภาพ', true); return; }
+    loadSrc(URL.createObjectURL(f), f.name, f.size);
+  }
+  function makeDemo() {
+    // ภาพตัวอย่างความละเอียดต่ำ: การ์ดพนักงาน
+    const big = document.createElement('canvas'); big.width = 520; big.height = 330;
+    const g = big.getContext('2d');
+    const bg = g.createLinearGradient(0, 0, 520, 330);
+    bg.addColorStop(0, '#173A6B'); bg.addColorStop(1, '#0E7C8B');
+    g.fillStyle = bg; g.fillRect(0, 0, 520, 330);
+    g.fillStyle = '#fff'; g.fillRect(24, 24, 472, 282);
+    g.fillStyle = '#12305B'; g.fillRect(24, 24, 472, 56);
+    g.fillStyle = '#fff'; g.font = 'bold 26px sans-serif'; g.fillText('TSKT CO., LTD.', 44, 62);
+    g.fillStyle = '#E8EDF5'; g.fillRect(50, 104, 120, 150);
+    g.fillStyle = '#9FB0C8'; g.beginPath(); g.arc(110, 152, 34, 0, 7); g.fill();
+    g.beginPath(); g.moveTo(110, 196); g.bezierCurveTo(60, 200, 56, 240, 56, 254); g.lineTo(164, 254); g.bezierCurveTo(164, 240, 160, 200, 110, 196); g.fill();
+    g.fillStyle = '#12305B'; g.font = 'bold 22px sans-serif'; g.fillText('Employee Card', 196, 130);
+    g.font = '17px sans-serif'; g.fillStyle = '#31456B';
+    ['Name : Thanarich K.', 'Position : Senior Supervisor', 'Dept : Administration', 'ID : 08-2451'].forEach((t, i) => g.fillText(t, 196, 166 + i * 26));
+    g.strokeStyle = '#12305B'; g.lineWidth = 2; g.strokeRect(24, 24, 472, 282);
+    // ย่อลงครึ่งหนึ่งเพื่อจำลองภาพความละเอียดต่ำ
+    const small = document.createElement('canvas'); small.width = 260; small.height = 165;
+    small.getContext('2d').drawImage(big, 0, 0, 260, 165);
+    loadSrc(small.toDataURL('image/jpeg', 0.7), 'ภาพตัวอย่าง', 0);
+    setTimeout(() => toast('ลองกด ✨ ขยายภาพ แล้วลากแถบกลางภาพเทียบดูค่ะ'), 400);
+  }
+
+  /* ---------- ย่อ/ขยายการดูภาพ (ไม่เกี่ยวกับขนาดไฟล์ผลลัพธ์) ---------- */
+  const scroller = $('scroller'), compare = $('compare');
+  const viewW = () => afterC.width || state.w || 1, viewH = () => afterC.height || state.h || 1;
+  function fitZoom() {
+    const pad = 20;
+    return Math.max(ZMIN, Math.min(1, (scroller.clientWidth - pad) / viewW(), (scroller.clientHeight - pad) / viewH()));
+  }
+  function setZoom(z, cx, cy, fit) {
+    if (!state.img) return;
+    z = Math.max(ZMIN, Math.min(ZMAX, z));
+    const sr = scroller.getBoundingClientRect(), lr = compare.getBoundingClientRect();
+    if (cx == null) { cx = sr.left + sr.width / 2; cy = sr.top + sr.height / 2; }
+    const ix = (cx - lr.left) / state.zoom, iy = (cy - lr.top) / state.zoom;
+    state.zoom = z; state.fitMode = !!fit;
+    compare.style.width = Math.round(viewW() * z) + 'px';
+    compare.style.height = Math.round(viewH() * z) + 'px';
+    compare.classList.toggle('pixel', z >= 3);
+    compare.classList.toggle('zoomed', z > fitZoom() + 0.001);
+    const nr = compare.getBoundingClientRect();
+    scroller.scrollLeft += (nr.left + ix * z) - cx;
+    scroller.scrollTop += (nr.top + iy * z) - cy;
+    $('zoomPct').textContent = Math.round(z * 100) + '%';
+    $('zoomOut').disabled = z <= ZMIN + 1e-6; $('zoomIn').disabled = z >= ZMAX - 1e-6;
+  }
+  const zoomFit = () => { setZoom(fitZoom(), null, null, true); scroller.scrollLeft = scroller.scrollTop = 0; };
+  const zoomBy = (f, cx, cy) => setZoom(state.zoom * f, cx, cy);
+  $('zoomIn').onclick = () => zoomBy(ZSTEP);
+  $('zoomOut').onclick = () => zoomBy(1 / ZSTEP);
+  $('zoomFit').onclick = zoomFit;
+  $('zoomPct').onclick = () => setZoom(1);
+  scroller.addEventListener('wheel', e => {
+    if (!state.img || !(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault(); zoomBy(Math.exp(-e.deltaY * 0.0022), e.clientX, e.clientY);
+  }, { passive: false });
+  new ResizeObserver(() => { if (state.img && state.fitMode) zoomFit(); }).observe(scroller);
+  window.addEventListener('keydown', e => {
+    if (!state.img || e.target.matches('input,select,textarea')) return;
+    if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomBy(ZSTEP); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomBy(1 / ZSTEP); }
+    else if (e.key === '0') zoomFit();
+    else if (e.key === '1') setZoom(1);
+  });
+
+  /* ---------- ตัวเลื่อนเทียบ ---------- */
+  function setSplit(pct) {
+    $('compare').style.setProperty('--split', Math.max(0, Math.min(100, pct)) + '%');
+  }
+  let dragging = false;
+  const pctFrom = e => {
+    const r = $('compare').getBoundingClientRect();
+    return (e.clientX - r.left) / r.width * 100;
+  };
+  $('bar').addEventListener('pointerdown', e => { dragging = true; $('bar').setPointerCapture(e.pointerId); });
+  $('bar').addEventListener('pointermove', e => { if (dragging) setSplit(pctFrom(e)); });
+  ['pointerup', 'pointercancel'].forEach(t => $('bar').addEventListener(t, () => dragging = false));
+  let hintShown = false;
+  compare.addEventListener('pointerdown', e => {
+    if (e.target === $('bar')) return;                       // ลากที่วงกลม = เลื่อนเส้นแบ่ง
+    if (compare.classList.contains('zoomed')) {              // ซูมอยู่ = ลากเพื่อเลื่อนดูภาพ
+      state.pan = { x: e.clientX, y: e.clientY, sl: scroller.scrollLeft, st: scroller.scrollTop };
+      compare.classList.add('panning');
+      compare.setPointerCapture(e.pointerId);
+      if (!hintShown) { hintShown = true; toast('ซูมอยู่ — ลากเพื่อเลื่อนดูภาพ · เลื่อนเส้นแบ่งที่วงกลม ⇆'); }
+      return;
+    }
+    setSplit(pctFrom(e));
+  });
+  compare.addEventListener('pointermove', e => {
+    if (!state.pan) return;
+    scroller.scrollLeft = state.pan.sl - (e.clientX - state.pan.x);
+    scroller.scrollTop = state.pan.st - (e.clientY - state.pan.y);
+  });
+  ['pointerup', 'pointercancel'].forEach(t => compare.addEventListener(t, () => {
+    state.pan = null; compare.classList.remove('panning');
+  }));
+
+  /* ---------- ขนาดไฟล์ / ขนาดภาพ ---------- */
+  function targetSize() {
+    let W = Math.round(state.w * state.scale), H = Math.round(state.h * state.scale);
+    const cap = Math.min(1, MAX_OUT / Math.max(W, H));
+    return { w: Math.round(W * cap), h: Math.round(H * cap), capped: cap < 1 };
+  }
+  const nf = n => n.toLocaleString('en-US');
+  function updateSizes() {
+    const box = $('sizes');
+    if (!state.img) {
+      box.innerHTML = ''; $('pxOut').textContent = '—'; $('sizeHint').textContent = 'เลือกรูปก่อน แล้วเลื่อนแถบเพื่อกำหนดขนาด';
+      $('capNote').classList.add('hidden');
+      return;
+    }
+    const t = targetSize();
+    // บรรทัดขนาดแบบสด ๆ ตามแถบเลื่อน
+    $('pxOut').textContent = `• ${nf(t.w)} × ${nf(t.h)} px`;
+    $('capNote').classList.toggle('hidden', !t.capped);
+    box.innerHTML = `<span class="chip">เดิม <b>${nf(state.w)}×${nf(state.h)}</b>${state.srcBytes ? ' · ' + fmtBytes(state.srcBytes) : ''}</span>
+      <span class="chip new">หลังขยาย <b>${nf(t.w)}×${nf(t.h)}</b> px</span>` +
+      (state.out ? `<span class="chip">ไฟล์ผลลัพธ์โดยประมาณ <b id="estBytes">กำลังคำนวณ…</b></span>` : '');
+    const mp = (t.w * t.h / 1e6).toFixed(1);
+    $('sizeHint').textContent = t.capped
+      ? `ขยายได้สูงสุด ${nf(MAX_OUT)} px ต่อด้าน (เท่ากับ ${maxScale().toFixed(2)}× ของรูปนี้) เพื่อไม่ให้เครื่องค้าง`
+      : `ประมาณ ${mp} ล้านพิกเซล · ลากแถบหรือพิมพ์ตัวเลขเพื่อปรับ`;
+  }
+  const maxScale = () => Math.min(4, MAX_OUT / Math.max(state.w || 1, state.h || 1));
+  function setScale(v, from) {
+    v = Math.min(4, Math.max(1, Math.round((+v || 1) * 20) / 20));      // ปัดทีละ 0.05
+    state.scale = v;
+    if (from !== 'range') $('scale').value = v;
+    if (from !== 'num') $('scaleNum').value = Number(v.toFixed(2));
+    document.querySelectorAll('#quick button').forEach(b => b.setAttribute('aria-pressed', Math.abs(+b.dataset.s - v) < 0.001));
+    updateSizes();
+  }
+
+  /* ---------- ขยายภาพ ---------- */
+  async function run() {
+    if (!state.img || state.busy) return;
+    state.busy = true; refresh();
+    $('busy').classList.remove('hidden'); $('busyFill').style.width = '0%';
+    $('busyText').textContent = 'กำลังขยายภาพ…';
+    const t0 = performance.now();
+    try {
+      const src = state.img.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, state.w, state.h);
+      const r = await ImageUp.enhance(src.data, state.w, state.h, {
+        scale: state.scale, sharpen: state.sharpen, denoise: state.denoise,
+        levels: state.levels / 100, saturation: state.sat, maxSide: MAX_OUT,
+        transparent: state.transparent, bgTolerance: state.bgTol, bgFeather: state.bgFeather,
+      }, p => { $('busyFill').style.width = Math.round(p * 100) + '%'; });
+      afterC.width = r.w; afterC.height = r.h;
+      actx.clearRect(0, 0, r.w, r.h);
+      actx.putImageData(new ImageData(r.data, r.w, r.h), 0, 0);
+      if (state.transparent && r.info) {
+        const pct = (r.info.ratio * 100).toFixed(1);
+        $('bgResult').textContent = r.info.ratio < 0.02
+          ? `⚠️ ลบพื้นหลังได้แค่ ${pct}% — พื้นหลังอาจไม่ใช่สีพื้น ลองเพิ่มความไวสี หรือใช้เครื่องมือ “ลบวัตถุในภาพ” โหมด AI`
+          : `ลบพื้นหลังออก ${pct}% ของภาพ · บันทึกเป็น PNG เพื่อคงความโปร่งใส`;
+      }
+      // ฝั่ง "ก่อน" ขยายด้วยวิธีธรรมดา เพื่อเทียบกันที่ขนาดเดียวกัน
+      beforeC.width = r.w; beforeC.height = r.h;
+      bctx.imageSmoothingQuality = 'high';
+      bctx.clearRect(0, 0, r.w, r.h);
+      bctx.drawImage(state.img, 0, 0, r.w, r.h);
+      state.out = { w: r.w, h: r.h };
+      if (state.fitMode) zoomFit(); else setZoom(state.zoom);
+      const sec = ((performance.now() - t0) / 1000).toFixed(1);
+      $('info2').textContent = `ขยายเสร็จใน ${sec} วินาที · ${r.w}×${r.h} px`;
+      updateSizes(); estimateBytes();
+      setSplit(50);
+      toast('เสร็จแล้ว ✨ ลากแถบกลางภาพเพื่อเทียบก่อน–หลัง');
+    } catch (e) {
+      console.error(e);
+      toast(e && e.message ? e.message : 'ขยายภาพไม่สำเร็จ — ลองลดขนาดที่ต้องการลง', true);
+    } finally {
+      state.busy = false; $('busy').classList.add('hidden'); refresh();
+    }
+  }
+  function estimateBytes() {
+    (state.transparent ? afterC : afterC).toBlob(b => { const el = $('estBytes'); if (el && b) el.textContent = fmtBytes(b.size); }, 'image/jpeg', +$('quality').value);
+  }
+
+  /* ---------- บันทึก ---------- */
+  const inViewer = !!(window.claude && typeof window.claude.use === 'function');
+  let downloads = null;
+  const dlReady = inViewer ? window.claude.use('downloads').then(x => (downloads = x)).catch(() => null) : Promise.resolve(null);
+  function save(type) {
+    const mime = type === 'jpg' ? 'image/jpeg' : 'image/png';
+    const filename = `${state.name}_ขยาย${state.out ? String(state.scale).replace('.', ',') + 'x' : ''}.${type}`;
+    let src = afterC;
+    if (type === 'jpg') {                       // JPG ไม่มีความโปร่งใส → รองพื้นขาวให้
+      src = document.createElement('canvas'); src.width = afterC.width; src.height = afterC.height;
+      const c = src.getContext('2d'); c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, src.width, src.height); c.drawImage(afterC, 0, 0);
+    }
+    src.toBlob(async b => {
+      if (!b) { toast('บันทึกไม่สำเร็จ', true); return; }
+      if (inViewer) {
+        await dlReady;
+        if (!downloads) { toast('หน้านี้บันทึกไฟล์ไม่ได้ — คลิกขวาที่ภาพแล้วเลือกบันทึกภาพแทน', true); return; }
+        try { await downloads.save({ filename, data: b }); toast(`บันทึกแล้ว · ${fmtBytes(b.size)}`); }
+        catch (e) { toast(e && e.code === 'declined' ? 'ยกเลิกการบันทึก' : 'บันทึกไม่สำเร็จ', true); }
+        return;
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b); a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast(`บันทึกแล้ว · ${fmtBytes(b.size)}`);
+    }, mime, +$('quality').value);
+  }
+
+  /* ---------- ปุ่ม ---------- */
+  function refresh() {
+    const has = !!state.img, B = state.busy;
+    $('runBtn').disabled = !has || B;
+    $('savePng').disabled = $('saveJpg').disabled = !has || B;
+    $('newBtn').disabled = B;
+  }
+  function setPreset(p) {
+    state.preset = p;
+    document.querySelectorAll('#presetSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === p));
+    const v = PRESETS[p];
+    setSlider('sharpen', v.sharpen); setSlider('denoise', v.denoise);
+    setSlider('levels', v.levels); setSlider('sat', v.sat);
+  }
+  function setSlider(key, val) {
+    state[key] = val;
+    $(key).value = val;
+    $(key + 'Out').textContent = key === 'denoise' ? ['ปิด', 'เบา', 'ปานกลาง', 'แรง'][val]
+      : key === 'levels' ? val + '%' : val;
+  }
+  $('scale').oninput = e => setScale(e.target.value, 'range');
+  $('scaleNum').oninput = e => { const v = +e.target.value; if (v >= 1 && v <= 4) setScale(v, 'num'); };
+  $('scaleNum').onblur = e => setScale(e.target.value);
+  document.querySelectorAll('#quick button').forEach(b => b.onclick = () => setScale(+b.dataset.s));
+  document.querySelectorAll('#presetSeg button').forEach(b => b.onclick = () => setPreset(b.dataset.p));
+  ['sharpen', 'denoise', 'levels', 'sat'].forEach(k => $(k).oninput = e => setSlider(k, +e.target.value));
+  function setTransparent(v) {
+    state.transparent = v;
+    $('transSw').setAttribute('aria-checked', v);
+    $('bgOpts').classList.toggle('hidden', !v);
+    if (v) toast('เปิดโหมดพื้นหลังโปร่งใส — กดขยายภาพแล้วบันทึกเป็น PNG');
+  }
+  $('transSw').onclick = () => setTransparent(!state.transparent);
+  $('bgTol').oninput = e => { state.bgTol = +e.target.value; $('bgTolOut').textContent = state.bgTol; };
+  $('bgFeather').oninput = e => { state.bgFeather = +e.target.value; $('bgFeatherOut').textContent = state.bgFeather + ' px'; };
+  $('runBtn').onclick = run;
+  $('savePng').onclick = () => save('png');
+  $('saveJpg').onclick = () => save('jpg');
+  $('quality').onchange = () => { if (state.out) estimateBytes(); };
+  $('newBtn').onclick = () => EMBED ? toParent({ type: 'pick' }) : $('file').click();
+  $('file').onchange = e => { loadFile(e.target.files[0]); e.target.value = ''; };
+  $('demoBtn').onclick = e => { e.stopPropagation(); makeDemo(); };
+  $('empty').onclick = () => EMBED ? toParent({ type: 'pick' }) : $('file').click();
+  $('helpToggle').onclick = () => {
+    const box = $('helpBox'), open = box.classList.contains('collapsed');
+    box.classList.toggle('collapsed', !open);
+    $('helpToggle').textContent = open ? 'ซ่อน' : 'แสดง';
+    $('helpToggle').setAttribute('aria-expanded', open);
+    try { localStorage.setItem('up_help_open', open ? '1' : '0'); } catch (e) {}
+  };
+  try { if (localStorage.getItem('up_help_open') === '0') $('helpToggle').click(); } catch (e) {}
+
+  const view = $('view');
+  view.addEventListener('dragover', e => { e.preventDefault(); });
+  view.addEventListener('drop', e => { e.preventDefault(); if (!state.busy) loadFile(e.dataTransfer.files[0]); });
+  window.addEventListener('paste', e => {
+    if (state.busy) return;
+    const it = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+    if (it) loadFile(it.getAsFile());
+  });
+
+  /* ---------- โหมดฝังใน DocDesk ---------- */
+  const toParent = msg => { try { parent.postMessage({ src: 'docdesk-upscale', ...msg }, location.protocol === 'file:' ? '*' : location.origin); } catch (e) {} };
+  if (EMBED) {
+    document.body.classList.add('embed');
+    const syncTheme = () => {
+      try {
+        const pd = parent.document.documentElement, cs = parent.getComputedStyle(pd), me = document.documentElement.style;
+        const v = n => cs.getPropertyValue(n).trim();
+        const dark = pd.getAttribute('data-theme') === 'dark';
+        me.setProperty('--bg', 'transparent'); me.setProperty('--panel', v('--paper') || '#fff');
+        me.setProperty('--ink', v('--ink')); me.setProperty('--muted', v('--muted')); me.setProperty('--line', v('--line'));
+        me.setProperty('--accent', v('--brand')); me.setProperty('--accent-ink', dark ? '#0B0B10' : '#FFFFFF');
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      } catch (e) {}
+    };
+    syncTheme();
+    try { new MutationObserver(() => requestAnimationFrame(syncTheme)).observe(parent.document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-skin'] }); } catch (e) {}
+    const okOrigin = o => o === location.origin || (location.protocol === 'file:' && o === 'null');
+    window.addEventListener('message', e => {
+      if (!okOrigin(e.origin) || !e.data || e.data.dst !== 'docdesk-upscale') return;
+      const d = e.data;
+      if (d.type === 'image' && d.blob) {
+        if (state.busy) { toast('รอให้ขยายภาพเสร็จก่อนนะคะ', true); return; }
+        loadSrc(URL.createObjectURL(d.blob), d.name || 'image', d.blob.size);
+      }
+      if (d.type === 'viewport' && d.h) document.documentElement.style.setProperty('--boxh', Math.round(Math.min(640, Math.max(280, d.h * 0.55))) + 'px');
+    });
+    let lastH = 0;
+    new ResizeObserver(() => {
+      const h = Math.ceil(document.documentElement.scrollHeight);
+      if (Math.abs(h - lastH) > 2) { lastH = h; toParent({ type: 'height', h }); }
+    }).observe(document.body);
+    toParent({ type: 'ready' });
+  }
+
+  setPreset('photo');
+  setScale(2);
+  refresh();
+  window.__upTest = {
+    makeDemo,
+    state: () => ({ has: !!state.img, w: state.w, h: state.h, out: state.out, scale: state.scale,
+                    preset: state.preset, sharpen: state.sharpen, denoise: state.denoise,
+                    levels: state.levels, sat: state.sat, busy: state.busy,
+                    transparent: state.transparent, bgTol: state.bgTol, bgFeather: state.bgFeather,
+                    zoom: state.zoom, zoomed: $('compare').classList.contains('zoomed'),
+                    split: getComputedStyle($('compare')).getPropertyValue('--split').trim() }),
+  };
+})();
+</script>
+</body>
+</html>

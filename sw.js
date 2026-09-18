@@ -6,7 +6,7 @@
    (เช่น v1 เป็น v2) ผู้ใช้จะได้รับแจ้งเตือนว่ามีเวอร์ชันใหม่
    ═══════════════════════════════════════════════════════════ */
 
-const VERSION   = 'v5';
+const VERSION   = 'v8';
 const APP_CACHE = 'docdesk-app-' + VERSION;   /* ไฟล์ของเราเอง */
 const LIB_CACHE = 'docdesk-lib-v1';           /* ไลบรารีจาก CDN (เวอร์ชันตายตัว ไม่ต้องล้างบ่อย) */
 
@@ -15,6 +15,7 @@ const APP_FILES = [
   './',
   './index.html',
   './eraser.html',
+  './upscaler.html',
   './manifest.json',
   './docdesk-icon-192.png',
   './docdesk-icon-512.png',
