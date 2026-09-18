@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ลบวัตถุในภาพ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== Design tokens (สว่าง/มืด) ===== */
+:root{
+  --bg:#E9EDF2; --panel:#FFFFFF; --ink:#16233A; --muted:#5B6B82; --line:#D3DAE4;
+  --accent:#1F5FD6; --accent-ink:#FFFFFF; --mask:#E4368C; --magic:#7B3FE4; --ok:#138A5B; --warn:#B4400F;
+  --checker-a:#F3F5F8; --checker-b:#E1E6ED;
+  font-family:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101723; --panel:#18212F; --ink:#E6ECF5; --muted:#93A2B8; --line:#2A3649;
+    --accent:#5B8CFF; --accent-ink:#0B1220; --mask:#FF5AA8; --magic:#A77BFF; --ok:#3CC98E; --warn:#FF8A50;
+    --checker-a:#1B2433; --checker-b:#222D3F; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101723; --panel:#18212F; --ink:#E6ECF5; --muted:#93A2B8; --line:#2A3649;
+  --accent:#5B8CFF; --accent-ink:#0B1220; --mask:#FF5AA8; --magic:#A77BFF; --ok:#3CC98E; --warn:#FF8A50;
+  --checker-a:#1B2433; --checker-b:#222D3F; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55}
+button,select,input{font:inherit;color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 16px 40px}
+
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-size:1.9rem;line-height:1.15;margin:0;font-weight:700;letter-spacing:-.01em;position:relative;z-index:0}
+h1 .stroke{position:relative;white-space:nowrap}
+h1 .stroke::after{content:"";position:absolute;left:-4px;right:-4px;bottom:.08em;height:.42em;
+  background:var(--mask);opacity:.45;border-radius:99px;z-index:-1;transform:rotate(-1.2deg)}
+.sub{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.privacy{font-size:.85rem;color:var(--ok);display:flex;align-items:center;gap:6px}
+
+.layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+@media (max-width:880px){.layout{grid-template-columns:1fr}}
+
+/* ===== พื้นที่ภาพ ===== */
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;min-width:0}
+.canvas-box{position:relative;height:min(70vh,720px);min-height:360px;border-radius:10px;overflow:hidden;
+  background-color:var(--checker-a);
+  background-image:linear-gradient(45deg,var(--checker-b) 25%,transparent 25%,transparent 75%,var(--checker-b) 75%),
+                   linear-gradient(45deg,var(--checker-b) 25%,transparent 25%,transparent 75%,var(--checker-b) 75%);
+  background-size:20px 20px;background-position:0 0,10px 10px}
+/* scroller: เลื่อนดูภาพเมื่อซูมใหญ่กว่ากรอบ (margin:auto ของลูก = จัดกลางแบบไม่ตัดขอบ) */
+.scroller{position:absolute;inset:0;overflow:auto;display:flex;padding:12px;overscroll-behavior:contain}
+.layers{position:relative;margin:auto;line-height:0;flex:none;box-shadow:0 1px 8px rgba(0,0,0,.18)}
+.layers canvas{display:block}
+#imgCanvas{width:100%;height:100%}
+#imgCanvas.pixel{image-rendering:pixelated}
+#maskCanvas{position:absolute;inset:0;width:100%;height:100%;opacity:.55;touch-action:none;cursor:none}
+.layers.tool-magic #maskCanvas,.layers.tool-lasso #maskCanvas,.layers.tool-ai #maskCanvas{cursor:crosshair}
+.layers.ai-busy #maskCanvas{cursor:progress}
+#lassoSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#lassoSvg.box polyline{stroke-dasharray:none}
+#lassoSvg polyline{fill:color-mix(in srgb,var(--mask) 25%,transparent);stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+#lassoSvg .l1{stroke:#fff}
+#lassoSvg .l2{stroke:#111;stroke-dasharray:5 5;fill:none;animation:ants .6s linear infinite}
+#lassoSvg.sub polyline.l1{fill:rgba(0,0,0,.18)}
+@keyframes ants{to{stroke-dashoffset:-10}}
+.layers.tool-hand #maskCanvas{cursor:grab}
+.layers.tool-hand.panning #maskCanvas{cursor:grabbing}
+.layers.peek #maskCanvas{opacity:0}
+#cursor{position:absolute;pointer-events:none;border:2px solid #fff;outline:1.5px solid rgba(0,0,0,.55);border-radius:50%;
+  transform:translate(-50%,-50%);display:none}
+.layers.tool-magic #cursor,.layers.tool-hand #cursor,.layers.tool-lasso #cursor,.layers.tool-ai #cursor{display:none!important}
+
+/* แถบซูมลอยมุมขวาล่าง */
+.zoombar{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:2px;padding:4px;border-radius:12px;
+  background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.zoombar button{border:0;background:transparent;min-width:34px;height:32px;border-radius:8px;cursor:pointer;font-size:1rem;padding:0 8px}
+.zoombar button:hover:not(:disabled){background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.zoombar button:disabled{opacity:.4;cursor:not-allowed}
+.zoombar #zoomPct{min-width:62px;font-size:.85rem;font-variant-numeric:tabular-nums}
+.zoombar .sep{width:1px;height:20px;background:var(--line);margin:0 2px}
+
+.drop{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  border:2px dashed var(--line);border-radius:10px;background:var(--panel);text-align:center;padding:24px;cursor:pointer}
+.drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel))}
+.drop strong{font-size:1.15rem}
+.drop small{color:var(--muted)}
+.hidden{display:none!important}
+
+.busy{position:absolute;inset:0;background:color-mix(in srgb,var(--panel) 70%,transparent);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;backdrop-filter:blur(2px);z-index:3}
+.bar{width:min(320px,70%);height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}
+
+.stagebar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;color:var(--muted);font-size:.85rem}
+
+/* ===== แผงควบคุม ===== */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:16px;position:sticky;top:12px}
+.group h2{font-size:.95rem;margin:0 0 8px;font-weight:600}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.seg.six{grid-template-columns:repeat(2,1fr)}
+.seg button{border:0;background:transparent;padding:8px 6px;border-radius:7px;cursor:pointer;font-size:.9rem;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel);font-weight:600}
+.seg button[aria-pressed="true"] kbd{border-color:color-mix(in srgb,var(--panel) 45%,transparent)}
+.seg button#toolMagic[aria-pressed="true"]{background:var(--magic);color:#fff}
+.seg button#toolAi[aria-pressed="true"]{background:linear-gradient(135deg,var(--accent),var(--magic));color:#fff}
+.range{display:flex;align-items:center;gap:10px}
+.range input{flex:1;accent-color:var(--accent)}
+.range output{min-width:48px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.hint{font-size:.8rem;color:var(--muted);margin:6px 0 0}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opts label.lbl{font-size:.85rem;display:block;margin-bottom:2px}
+.check{display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer}
+.check input{accent-color:var(--magic);width:16px;height:16px}
+.magic-box{border:1px solid color-mix(in srgb,var(--magic) 40%,var(--line));border-radius:10px;padding:10px;
+  background:color-mix(in srgb,var(--magic) 6%,var(--panel))}
+.magic-box .range input{accent-color:var(--magic)}
+.magic-mode{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.magic-mode button{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px;cursor:pointer;font-size:.85rem}
+.magic-mode button[aria-pressed="true"]{border-color:var(--magic);color:var(--magic);font-weight:600}
+.ai-box{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
+.ai-status{font-size:.85rem;display:flex;gap:8px;align-items:flex-start}
+.ai-status .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);margin-top:.45em;flex:none}
+.ai-status.ready .dot{background:var(--ok)}
+.ai-status.loading .dot,.ai-status.working .dot{background:var(--accent);animation:pulse 1s ease-in-out infinite}
+.ai-status.error .dot{background:var(--warn)}
+@keyframes pulse{50%{opacity:.25}}
+.ai-bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.cut-box{border-color:color-mix(in srgb,var(--ok) 45%,var(--line));background:color-mix(in srgb,var(--ok) 6%,var(--panel))}
+.btn.cut{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:600;width:100%;padding:11px}
+.btn.cut:hover:not(:disabled){filter:brightness(1.08)}
+select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+.ai-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--magic));transition:width .2s}
+
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:hover:not(:disabled){border-color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;padding:12px;font-size:1rem;width:100%}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08);border-color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:10px;
+  font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:10}
+.toast.show{opacity:1}
+.toast.err{background:var(--warn);color:#fff}
+
+details.guide{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
+details.guide summary{cursor:pointer;font-weight:600}
+details.guide ol{margin:10px 0 4px;padding-left:20px}
+details.guide li{margin:4px 0}
+details.guide table{border-collapse:collapse;font-size:.85rem;margin-top:8px}
+details.guide td{padding:3px 10px 3px 0;vertical-align:top}
+kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:.78rem;font-family:inherit}
+/* ===== โหมดฝังใน DocDesk ===== */
+body.embed{background:transparent}
+body.embed .wrap{padding:0;max-width:none}
+body.embed header{display:none}
+body.embed .canvas-box{height:var(--boxh,520px);min-height:320px}
+body.embed .layout{grid-template-columns:1fr 280px;gap:12px}
+@media (max-width:760px){body.embed .layout{grid-template-columns:1fr}}
+body.embed .panel{position:static}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>ลบ<span class="stroke">วัตถุ</span>ออกจากภาพ</h1>
+      <p class="sub">เลือกสิ่งที่ไม่ต้องการด้วย 🤖 AI, 🪄 Magic, ➰ Lasso หรือแปรง แล้วกด “ลบวัตถุ” ระบบจะเติมพื้นที่ด้วยลวดลายจากส่วนอื่นของภาพ</p>
+    </div>
+    <div class="privacy" title="ภาพไม่ถูกส่งออกนอกเครื่อง">🔒 ประมวลผลในเบราว์เซอร์ ไม่อัปโหลดภาพ</div>
+  </header>
+
+  <div class="layout">
+    <section class="stage" aria-label="พื้นที่ภาพ">
+      <div class="canvas-box" id="box">
+        <div class="scroller hidden" id="scroller">
+          <div class="layers tool-brush" id="layers">
+            <canvas id="imgCanvas"></canvas>
+            <canvas id="maskCanvas" aria-label="เลือกพื้นที่ที่ต้องการลบ"></canvas>
+            <svg id="lassoSvg" class="hidden" preserveAspectRatio="none" aria-hidden="true"><polyline class="l1"/><polyline class="l2"/></svg>
+            <div id="cursor"></div>
+          </div>
+        </div>
+        <div class="zoombar hidden" id="zoombar" role="group" aria-label="ย่อขยายภาพ">
+          <button type="button" id="zoomOut" title="ย่อ (Ctrl + −)" aria-label="ย่อภาพ">−</button>
+          <button type="button" id="zoomPct" title="คลิกเพื่อดูขนาดจริง 100%">100%</button>
+          <button type="button" id="zoomIn" title="ขยาย (Ctrl + +)" aria-label="ขยายภาพ">+</button>
+          <span class="sep"></span>
+          <button type="button" id="zoomFit" title="พอดีกรอบ (0)">⤢ พอดีจอ</button>
+        </div>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="เลือกภาพ">
+          <div style="font-size:2.4rem">🖼️</div>
+          <strong>ลากภาพมาวาง หรือคลิกเพื่อเลือก</strong>
+          <small>รองรับ JPG, PNG, WebP · วางจากคลิปบอร์ดด้วย Ctrl+V ได้</small>
+          <button class="btn" id="demoBtn" type="button">ลองกับภาพตัวอย่าง</button>
+        </div>
+        <div class="busy hidden" id="busy" role="status" aria-live="polite">
+          <strong id="busyText">กำลังลบวัตถุ…</strong>
+          <div class="bar"><i id="barFill"></i></div>
+          <small id="busyPct">0%</small>
+        </div>
+      </div>
+      <div class="stagebar">
+        <span id="info">ยังไม่มีภาพ</span>
+        <span id="timeInfo"></span>
+      </div>
+      <input type="file" id="file" accept="image/*" hidden>
+    </section>
+
+    <aside class="panel" aria-label="เครื่องมือ">
+      <div class="group">
+        <h2>เครื่องมือเลือกพื้นที่</h2>
+        <div class="seg six" role="group">
+          <button type="button" id="toolAi" data-tool="ai" aria-pressed="false">🤖 AI <kbd>A</kbd></button>
+          <button type="button" id="toolMagic" data-tool="magic" aria-pressed="false">🪄 Magic <kbd>W</kbd></button>
+          <button type="button" id="toolLasso" data-tool="lasso" aria-pressed="false">➰ Lasso <kbd>L</kbd></button>
+          <button type="button" id="toolBrush" data-tool="brush" aria-pressed="true">🖌️ ระบาย <kbd>B</kbd></button>
+          <button type="button" id="toolErase" data-tool="erase" aria-pressed="false">🩹 ลบรอย <kbd>E</kbd></button>
+          <button type="button" id="toolHand" data-tool="hand" aria-pressed="false">✋ เลื่อน <kbd>H</kbd></button>
+        </div>
+      </div>
+
+      <!-- ตัวเลือกแปรง (ระบาย / ลบรอย) -->
+      <div class="group" id="brushOpts">
+        <h2>ขนาดหัวแปรง</h2>
+        <div class="range">
+          <input type="range" id="size" min="4" max="120" value="28" aria-label="ขนาดหัวแปรง">
+          <output id="sizeOut">28 px</output>
+        </div>
+        <p class="hint">ปรับเร็วด้วย <kbd>[</kbd> <kbd>]</kbd> · ระบายให้เลยขอบวัตถุเล็กน้อย</p>
+      </div>
+
+      <!-- ตัวเลือก AI -->
+      <div class="group magic-box ai-box hidden" id="aiOpts">
+        <h2>🤖 AI เลือกวัตถุตามรูปร่าง</h2>
+        <div class="opts">
+          <div class="ai-status" id="aiStatus"><span class="dot"></span><span id="aiText">ยังไม่ได้เปิดใช้ AI</span></div>
+          <div class="ai-bar hidden" id="aiBar"><i></i></div>
+          <button type="button" class="btn" id="aiLoadBtn">⚡ เปิดใช้ AI</button>
+          <p class="hint" style="margin:0" id="aiNote">ครั้งแรกต้องดาวน์โหลดโมเดลประมาณ 30–40 MB (ครั้งต่อไปเบราว์เซอร์จำไว้) · ประมวลผลในเครื่อง ไม่ส่งภาพออกไป</p>
+          <div>
+            <label class="lbl">วิธีชี้วัตถุ</label>
+            <div class="magic-mode" role="group" aria-label="วิธีชี้วัตถุ">
+              <button type="button" id="aiPoint" aria-pressed="true">🖱️ คลิกจุด</button>
+              <button type="button" id="aiBox" aria-pressed="false">⬛ ลากกรอบ</button>
+            </div>
+          </div>
+          <div class="magic-mode" role="group" aria-label="โหมด AI">
+            <button type="button" id="aiAdd" aria-pressed="true">＋ เลือกวัตถุ</button>
+            <button type="button" id="aiSub" aria-pressed="false">－ ตัดวัตถุ</button>
+          </div>
+          <div>
+            <label class="lbl" for="aiGrow">ขยายขอบที่เลือก</label>
+            <div class="range"><input type="range" id="aiGrow" min="0" max="30" value="6"><output id="aiGrowOut">6 px</output></div>
+          </div>
+          <p class="hint" style="margin:0" id="aiHint">คลิกที่วัตถุ = เลือกทั้งชิ้น · <kbd>Shift</kbd>+คลิก = เพิ่มส่วนให้ชิ้นล่าสุด · <kbd>Shift</kbd>+<kbd>Alt</kbd>+คลิก = ตัดส่วนเกินของชิ้นล่าสุด</p>
+        </div>
+      </div>
+
+      <!-- ตัวเลือก Lasso -->
+      <div class="group magic-box hidden" id="lassoOpts">
+        <h2>➰ Lasso วาดเส้นล้อมรอบ</h2>
+        <div class="opts">
+          <div class="magic-mode" role="group" aria-label="โหมด Lasso">
+            <button type="button" id="lassoAdd" aria-pressed="true">＋ เพิ่มพื้นที่</button>
+            <button type="button" id="lassoSub" aria-pressed="false">－ ตัดพื้นที่</button>
+          </div>
+          <p class="hint" style="margin:0">กดค้างแล้วลากล้อมรอบวัตถุ ปล่อยเมื่อครบรอบ (ระบบลากเส้นปิดให้เอง) · กด <kbd>Alt</kbd> ค้างขณะลาก = ตัดพื้นที่</p>
+        </div>
+      </div>
+
+      <!-- ตัวเลือก Magic -->
+      <div class="group magic-box hidden" id="magicOpts">
+        <h2>🪄 Magic เลือกตามสี</h2>
+        <div class="opts">
+          <div class="magic-mode" role="group" aria-label="โหมด Magic">
+            <button type="button" id="magicAdd" aria-pressed="true">＋ เพิ่มพื้นที่</button>
+            <button type="button" id="magicSub" aria-pressed="false">－ ตัดพื้นที่</button>
+          </div>
+          <div>
+            <label class="lbl" for="tol">ความไวสี (ยิ่งมาก ยิ่งเลือกกว้าง)</label>
+            <div class="range"><input type="range" id="tol" min="1" max="150" value="32"><output id="tolOut">32</output></div>
+          </div>
+          <div>
+            <label class="lbl" for="grow">ขยายขอบที่เลือก</label>
+            <div class="range"><input type="range" id="grow" min="0" max="20" value="3"><output id="growOut">3 px</output></div>
+          </div>
+          <label class="check"><input type="checkbox" id="contig" checked> เฉพาะส่วนที่ติดกัน</label>
+          <label class="check"><input type="checkbox" id="holes" checked> เติมช่องว่างข้างใน (เช่น ตัวหนังสือบนป้าย)</label>
+          <p class="hint" style="margin:0">คลิกที่วัตถุ 1 ครั้ง = เลือกทั้งชิ้น · กด <kbd>Alt</kbd> ค้างขณะคลิก = ตัดพื้นที่ · ปิด “เฉพาะส่วนที่ติดกัน” เพื่อเลือกตัวอักษรลายน้ำทั้งหมดในคลิกเดียว</p>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>คุณภาพการลบ</h2>
+        <div class="seg three" role="group" id="qualityGroup">
+          <button type="button" data-q="fast" aria-pressed="false">เร็ว</button>
+          <button type="button" data-q="balanced" aria-pressed="true">สมดุล</button>
+          <button type="button" data-q="best" aria-pressed="false">ละเอียด</button>
+        </div>
+      </div>
+
+      <button class="btn primary" id="runBtn" type="button" disabled>✨ ลบวัตถุ</button>
+
+      <div class="group magic-box cut-box">
+        <h2>🌤️ หรือเก็บเฉพาะสิ่งที่เลือก</h2>
+        <div class="opts">
+          <button class="btn cut" id="cutBtn" type="button" disabled>🪄 ลบพื้นหลัง (เก็บที่เลือกไว้)</button>
+          <div>
+            <label class="lbl" for="cutFill">พื้นหลังใหม่</label>
+            <select id="cutFill">
+              <option value="none">โปร่งใส — บันทึกเป็น PNG</option>
+              <option value="#FFFFFF">ขาว — รูปติดบัตรราชการ</option>
+              <option value="#C7DFF5">ฟ้าอ่อน — รูปติดบัตรทั่วไป</option>
+              <option value="#D64545">แดง</option>
+              <option value="custom">เลือกสีเอง…</option>
+            </select>
+          </div>
+          <div id="cutColorWrap" class="hidden">
+            <label class="lbl" for="cutColor">สีที่เลือกเอง</label>
+            <input type="color" id="cutColor" value="#0E8C93" style="width:100%;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel)">
+          </div>
+          <div>
+            <label class="lbl" for="cutFeather">ความนุ่มของขอบ</label>
+            <div class="range"><input type="range" id="cutFeather" min="0" max="12" value="2"><output id="cutFeatherOut">2 px</output></div>
+          </div>
+          <p class="hint" style="margin:0">เลือก “ตัววัตถุที่ต้องการเก็บ” ด้วย 🤖 AI แล้วกดปุ่มนี้ — ใช้กับพื้นหลังหลายสีได้</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="undoBtn" type="button" disabled title="Ctrl+Z">↶ ย้อนกลับ</button>
+        <button class="btn" id="clearBtn" type="button" disabled>ล้างที่เลือก</button>
+      </div>
+      <button class="btn" id="peekBtn" type="button" disabled title="กดค้างเพื่อดูภาพต้นฉบับ">👁️ กดค้างดูภาพต้นฉบับ</button>
+
+      <div class="group">
+        <h2>บันทึกภาพ</h2>
+        <div class="row">
+          <button class="btn" id="savePng" type="button" disabled>PNG</button>
+          <button class="btn" id="saveJpg" type="button" disabled>JPG</button>
+        </div>
+      </div>
+      <button class="btn" id="newBtn" type="button">📂 เปลี่ยนภาพ</button>
+    </aside>
+  </div>
+
+  <details class="guide">
+    <summary>📘 คู่มือใช้งานสั้นๆ</summary>
+    <ol>
+      <li>เลือกภาพ (ลากวาง / คลิก / Ctrl+V)</li>
+      <li>เลือกพื้นที่ที่จะลบ (ใช้ผสมกันได้):
+        <b>🤖 AI</b> คลิกวัตถุ ระบบหาขอบตามรูปร่าง ·
+        <b>🪄 Magic</b> คลิกเลือกตามสี ·
+        <b>➰ Lasso</b> ลากเส้นล้อมรอบ ·
+        <b>🖌️ ระบาย</b> ด้วยแปรง — เลือกเกินใช้ 🩹 ลบรอย หรือโหมด “ตัด”</li>
+      <li>ใช้ <b>+ / −</b> มุมขวาล่างซูมเข้าไปเก็บรายละเอียด และ ✋ เลื่อนภาพ</li>
+      <li>กด <b>✨ ลบวัตถุ</b> เพื่อลบสิ่งที่เลือกออก — หรือกด <b>🪄 ลบพื้นหลัง</b> เพื่อเก็บเฉพาะสิ่งที่เลือกไว้ (พื้นหลังโปร่งใสหรือใส่สีใหม่)</li>
+      <li>ยังไม่เนียน? เลือกเฉพาะจุดที่เหลือแล้วกดซ้ำ · ย้อนได้ทั้งการเลือกและการลบ</li>
+      <li>กดค้าง 👁️ เทียบกับต้นฉบับ แล้วบันทึกเป็น PNG/JPG</li>
+    </ol>
+    <table>
+      <tr><td><b>คีย์ลัด</b></td><td><kbd>A</kbd> AI · <kbd>W</kbd> Magic · <kbd>L</kbd> Lasso · <kbd>B</kbd> ระบาย · <kbd>E</kbd> ลบรอย · <kbd>H</kbd> เลื่อน (หรือกด <kbd>Space</kbd> ค้าง) · <kbd>[</kbd> <kbd>]</kbd> ขนาดแปรง</td></tr>
+      <tr><td><b>ซูม</b></td><td><kbd>Ctrl</kbd>+ล้อเมาส์ · <kbd>+</kbd> <kbd>−</kbd> · <kbd>0</kbd> พอดีจอ · <kbd>1</kbd> ขนาดจริง</td></tr>
+      <tr><td><b>อื่นๆ</b></td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> ย้อนกลับ · <kbd>Enter</kbd> ลบวัตถุ</td></tr>
+    </table>
+    <p class="hint">เหมาะกับ: ลายน้ำ ตัวอักษร สิ่งของชิ้นเล็ก สายไฟ รอยเปื้อน บนพื้นหลังที่มีลายซ้ำ (ท้องฟ้า ผนัง พื้น หญ้า)<br>
+    ข้อจำกัด: พื้นที่ใหญ่มากบนลวดลายซับซ้อน (หน้าคน ขอบโค้งของวัตถุ) ระบบจะเดาลายได้ไม่สมบูรณ์ — แนะนำลบทีละส่วน</p>
+  </details>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =========================================================
+   Object Eraser core — PatchMatch multi-scale inpainting
+   หลักการ: เติมพื้นที่ที่ระบายด้วย "ชิ้นส่วนภาพ (patch)" ที่คล้ายที่สุด
+   จากส่วนอื่นของภาพ ทำจากภาพเล็กไปภาพใหญ่ (pyramid) ให้โครงสร้างต่อเนื่อง
+   ทำงานในเบราว์เซอร์ล้วน ไม่ส่งภาพออกนอกเครื่อง
+   ========================================================= */
+(function (root) {
+  'use strict';
+
+  const R = 3;               // รัศมี patch → patch 7x7
+  const SIGQ = 0.75;         // ทดสอบแล้ว 0.75 เนียนที่สุด (ค่าต่ำกว่าเกิดขอบเป็นบล็อก)
+  const yieldUI = () => new Promise(r => setTimeout(r, 0));
+
+  // ---------- ย่อภาพ + mask ลงครึ่งหนึ่ง ----------
+  function downsample(img, mask, w, h) {
+    const W = Math.max(1, w >> 1), H = Math.max(1, h >> 1);
+    const oi = new Float32Array(W * H * 3), om = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let s0 = 0, s1 = 0, s2 = 0, n = 0, hole = 0;
+      for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
+        const sx = Math.min(w - 1, 2 * x + dx), sy = Math.min(h - 1, 2 * y + dy), i = sy * w + sx;
+        if (mask[i]) { hole = 1; continue; }
+        s0 += img[i * 3]; s1 += img[i * 3 + 1]; s2 += img[i * 3 + 2]; n++;
+      }
+      const o = y * W + x;
+      om[o] = hole;                               // มีรูแม้พิกเซลเดียว = รู (ปลอดภัยกว่า)
+      if (n) { oi[o * 3] = s0 / n; oi[o * 3 + 1] = s1 / n; oi[o * 3 + 2] = s2 / n; }
+    }
+    return { img: oi, mask: om, w: W, h: H };
+  }
+
+  // ---------- เติมรูเบื้องต้นแบบ "ลอกหัวหอม" จากขอบเข้าใน ----------
+  function onionFill(img, mask, w, h) {
+    const known = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) known[i] = mask[i] ? 0 : 1;
+    let remaining = 0; for (let i = 0; i < w * h; i++) if (!known[i]) remaining++;
+    while (remaining > 0) {
+      const add = [];
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = y * w + x; if (known[i]) continue;
+        let s0 = 0, s1 = 0, s2 = 0, n = 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const xx = x + dx, yy = y + dy;
+          if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+          const j = yy * w + xx; if (!known[j]) continue;
+          s0 += img[j * 3]; s1 += img[j * 3 + 1]; s2 += img[j * 3 + 2]; n++;
+        }
+        if (n) add.push(i, s0 / n, s1 / n, s2 / n);
+      }
+      if (!add.length) break;                     // ทั้งภาพเป็นรู — ไม่มีข้อมูลให้เติม
+      for (let k = 0; k < add.length; k += 4) {
+        const i = add[k]; img[i * 3] = add[k + 1]; img[i * 3 + 1] = add[k + 2]; img[i * 3 + 2] = add[k + 3];
+        known[i] = 1; remaining--;
+      }
+    }
+  }
+
+  // ---------- หา patch ต้นทางที่ "สะอาด" (ไม่มีรูเลย) ด้วย integral image ----------
+  function validSources(mask, w, h) {
+    const ii = new Int32Array((w + 1) * (h + 1));
+    for (let y = 0; y < h; y++) { let row = 0; for (let x = 0; x < w; x++) {
+      row += mask[y * w + x]; ii[(y + 1) * (w + 1) + x + 1] = ii[y * (w + 1) + x + 1] + row; } }
+    const list = [];
+    for (let y = R; y < h - R; y++) for (let x = R; x < w - R; x++) {
+      const x0 = x - R, y0 = y - R, x1 = x + R + 1, y1 = y + R + 1;
+      const s = ii[y1 * (w + 1) + x1] - ii[y0 * (w + 1) + x1] - ii[y1 * (w + 1) + x0] + ii[y0 * (w + 1) + x0];
+      if (s === 0) list.push(y * w + x);
+    }
+    const flag = new Uint8Array(w * h); for (const i of list) flag[i] = 1;
+    return { list, flag };
+  }
+
+  // ---------- จุดศูนย์กลาง patch ปลายทาง = ทุกพิกเซลที่ patch แตะรู ----------
+  function targetCenters(mask, w, h) {
+    const t = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (!mask[y * w + x]) continue;
+      for (let dy = -R; dy <= R; dy++) { const yy = y + dy; if (yy < 0 || yy >= h) continue;
+        for (let dx = -R; dx <= R; dx++) { const xx = x + dx; if (xx < 0 || xx >= w) continue; t[yy * w + xx] = 1; } }
+    }
+    const list = []; for (let i = 0; i < w * h; i++) if (t[i]) list.push(i);
+    return list;
+  }
+
+  // ---------- ระยะห่างระหว่าง patch (SSD) หยุดเร็วเมื่อเกินค่าที่ดีที่สุด ----------
+  function dist(img, w, h, tx, ty, sx, sy, best) {
+    let d = 0;
+    for (let dy = -R; dy <= R; dy++) {
+      const ty2 = ty + dy; if (ty2 < 0 || ty2 >= h) continue;
+      const trow = ty2 * w, srow = (sy + dy) * w;
+      for (let dx = -R; dx <= R; dx++) {
+        const tx2 = tx + dx; if (tx2 < 0 || tx2 >= w) continue;
+        const a = (trow + tx2) * 3, b = (srow + sx + dx) * 3;
+        const e0 = img[a] - img[b], e1 = img[a + 1] - img[b + 1], e2 = img[a + 2] - img[b + 2];
+        d += e0 * e0 + e1 * e1 + e2 * e2;
+      }
+      if (d >= best) return d;
+    }
+    return d;
+  }
+
+  // ---------- PatchMatch: propagation + random search ----------
+  async function patchMatch(L, nnf, nnd, targets, src, iters, tick) {
+    const { img, w, h } = L;
+    const isT = new Uint8Array(w * h); for (const t of targets) isT[t] = 1;
+    for (let it = 0; it < iters; it++) {
+      const fwd = it % 2 === 0, step = fwd ? 1 : -1;
+      const n = targets.length;
+      for (let k = 0; k < n; k++) {
+        const t = targets[fwd ? k : n - 1 - k];
+        const tx = t % w, ty = (t / w) | 0;
+        let best = nnf[t], bd = nnd[t];
+        // propagation จากเพื่อนบ้านซ้าย/ขวา และบน/ล่าง
+        const nb = [tx - step >= 0 && tx - step < w ? t - step : -1, ty - step >= 0 && ty - step < h ? t - step * w : -1];
+        for (let q = 0; q < 2; q++) {
+          const p = nb[q]; if (p < 0 || !isT[p]) continue;
+          const cand = nnf[p] + (q === 0 ? step : step * w);
+          if (cand < 0 || cand >= w * h || !src.flag[cand]) continue;
+          const cx = cand % w; if (q === 0 && Math.abs(cx - (nnf[p] % w)) !== 1) continue;
+          const d = dist(img, w, h, tx, ty, cx, (cand / w) | 0, bd);
+          if (d < bd) { bd = d; best = cand; }
+        }
+        // random search รอบตำแหน่งที่ดีที่สุด รัศมีลดลงครึ่งหนึ่งทุกรอบ
+        let rad = Math.max(w, h);
+        const bx0 = best % w, by0 = (best / w) | 0;
+        while (rad >= 1) {
+          const cx = Math.round(bx0 + (Math.random() * 2 - 1) * rad);
+          const cy = Math.round(by0 + (Math.random() * 2 - 1) * rad);
+          if (cx >= 0 && cy >= 0 && cx < w && cy < h) {
+            const cand = cy * w + cx;
+            if (src.flag[cand]) { const d = dist(img, w, h, tx, ty, cx, cy, bd); if (d < bd) { bd = d; best = cand; } }
+          }
+          rad >>= 1;
+        }
+        // สุ่มกระโดดไปทั้งภาพอีก 1 ครั้ง (กันติดอยู่มุมเดียว)
+        const rc = src.list[(Math.random() * src.list.length) | 0];
+        const dr = dist(img, w, h, tx, ty, rc % w, (rc / w) | 0, bd);
+        if (dr < bd) { bd = dr; best = rc; }
+        nnf[t] = best; nnd[t] = bd;
+        if ((k & 4095) === 0) await tick();
+      }
+    }
+  }
+
+  // ---------- ความมั่นใจของพิกเซล: นอกรู = 1, ในรูลดลงตามระยะจากขอบ ----------
+  function confidenceMap(mask, w, h) {
+    const d = new Float32Array(w * h), INF = 1e9;
+    for (let i = 0; i < w * h; i++) d[i] = mask[i] ? INF : 0;
+    // chamfer distance 2 รอบ (บนลงล่าง / ล่างขึ้นบน)
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; if (!d[i]) continue;
+      if (x > 0) d[i] = Math.min(d[i], d[i - 1] + 1); if (y > 0) d[i] = Math.min(d[i], d[i - w] + 1); }
+    for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) { const i = y * w + x; if (!d[i]) continue;
+      if (x < w - 1) d[i] = Math.min(d[i], d[i + 1] + 1); if (y < h - 1) d[i] = Math.min(d[i], d[i + w] + 1); }
+    const c = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) c[i] = d[i] >= INF ? 0.01 : Math.pow(1.3, -d[i]);
+    return c;
+  }
+
+  // ---------- Voting: สร้างสีในรูจาก patch ที่จับคู่ได้ ----------
+  function vote(L, nnf, nnd, targets, conf) {
+    const { img, mask, w, h } = L;
+    const acc = new Float32Array(w * h * 3), wsum = new Float32Array(w * h);
+    // ค่า sigma จากค่ากลางของระยะ → patch ที่เข้ากันกว่ามีน้ำหนักมากกว่า
+    const ds = []; for (let k = 0; k < targets.length; k += 7) ds.push(nnd[targets[k]]);
+    ds.sort((a, b) => a - b);
+    const sig = Math.max(1, ds[(ds.length * SIGQ) | 0] || 1);
+    for (const t of targets) {
+      const tx = t % w, ty = (t / w) | 0, s = nnf[t], sx = s % w, sy = (s / w) | 0;
+      // น้ำหนัก = ความคล้าย × ความมั่นใจเฉลี่ยของ patch (ใกล้ขอบรู = เชื่อมากกว่า)
+      let cs = 0, cn = 0;
+      for (let dy = -R; dy <= R; dy += 2) { const yy = ty + dy; if (yy < 0 || yy >= h) continue;
+        for (let dx = -R; dx <= R; dx += 2) { const xx = tx + dx; if (xx < 0 || xx >= w) continue; cs += conf[yy * w + xx]; cn++; } }
+      const wt = Math.exp(-nnd[t] / (2 * sig)) * (cn ? cs / cn : 0.01);
+      for (let dy = -R; dy <= R; dy++) { const yy = ty + dy; if (yy < 0 || yy >= h) continue;
+        for (let dx = -R; dx <= R; dx++) { const xx = tx + dx; if (xx < 0 || xx >= w) continue;
+          const i = yy * w + xx; if (!mask[i]) continue;
+          const j = ((sy + dy) * w + sx + dx) * 3;
+          acc[i * 3] += wt * img[j]; acc[i * 3 + 1] += wt * img[j + 1]; acc[i * 3 + 2] += wt * img[j + 2]; wsum[i] += wt; } }
+    }
+    for (let i = 0; i < w * h; i++) if (mask[i] && wsum[i] > 0) {
+      img[i * 3] = acc[i * 3] / wsum[i]; img[i * 3 + 1] = acc[i * 3 + 1] / wsum[i]; img[i * 3 + 2] = acc[i * 3 + 2] / wsum[i];
+    }
+  }
+
+  const PRESETS = {
+    fast:     { emCoarse: 8,  emFine: 3, pm: 2 },
+    balanced: { emCoarse: 15, emFine: 5, pm: 3 },
+    best:     { emCoarse: 25, emFine: 8, pm: 4 },
+  };
+
+  /**
+   * inpaint(rgba, mask, w, h, opts)
+   *  rgba : Uint8ClampedArray (ImageData.data) — จะถูกแก้ไขเฉพาะพิกเซลในรู
+   *  mask : Uint8Array (1 = ต้องการลบ)
+   *  opts : { quality: 'fast'|'balanced'|'best', onProgress(0..1) }
+   */
+  async function inpaint(rgba, mask, w, h, opts = {}) {
+    const P = PRESETS[opts.quality] || PRESETS.balanced;
+    const onProgress = opts.onProgress || (() => {});
+    let holeCount = 0; for (let i = 0; i < w * h; i++) if (mask[i]) holeCount++;
+    if (!holeCount) return { changed: 0 };
+    if (holeCount > w * h * 0.6) throw new Error('พื้นที่ที่ระบายใหญ่เกินไป (เกิน 60% ของภาพ) — ลองลดพื้นที่ลง');
+
+    // 1) สร้าง pyramid
+    const img0 = new Float32Array(w * h * 3);
+    for (let i = 0; i < w * h; i++) { img0[i * 3] = rgba[i * 4]; img0[i * 3 + 1] = rgba[i * 4 + 1]; img0[i * 3 + 2] = rgba[i * 4 + 2]; }
+    const levels = [{ img: img0, mask: new Uint8Array(mask), w, h }];
+    while (true) {
+      const L = levels[levels.length - 1];
+      if (L.w < 8 * R || L.h < 8 * R) break;
+      const D = downsample(L.img, L.mask, L.w, L.h);
+      let hc = 0; for (let i = 0; i < D.w * D.h; i++) hc += D.mask[i];
+      if (hc === 0) break;
+      const src = validSources(D.mask, D.w, D.h);
+      if (src.list.length < 50) break;             // ภาพเล็กเกินจนไม่มี patch ต้นทาง
+      levels.push(D);
+      if (hc <= 4) break;
+    }
+
+    // เตรียมงานนับความคืบหน้า
+    let totalWork = 0, done = 0;
+    const plan = levels.map((L, li) => {
+      const em = li === levels.length - 1 ? P.emCoarse : P.emFine;
+      const tg = targetCenters(L.mask, L.w, L.h);
+      totalWork += em * P.pm * tg.length + 1;
+      return { em, tg };
+    });
+    let last = 0;
+    const tick = async () => {
+      const now = Date.now();
+      if (now - last > 30) { last = now; await yieldUI(); }
+    };
+
+    // 2) ทำจากชั้นเล็กสุดขึ้นมา
+    let prevNNF = null, prevL = null;
+    for (let li = levels.length - 1; li >= 0; li--) {
+      const L = levels[li], { w: lw, h: lh } = L;
+      const { em, tg } = plan[li];
+      const src = validSources(L.mask, lw, lh);
+      if (!src.list.length) throw new Error('ไม่พบพื้นที่ต้นแบบให้คัดลอก — ลองลดพื้นที่ที่ระบาย');
+      const nnf = new Int32Array(lw * lh), nnd = new Float32Array(lw * lh);
+
+      if (!prevNNF) {
+        onionFill(L.img, L.mask, lw, lh);
+        for (const t of tg) nnf[t] = src.list[(Math.random() * src.list.length) | 0];
+      } else {
+        // ขยายผลลัพธ์ชั้นก่อนมาใส่รู แล้วขยาย NNF ×2
+        for (let y = 0; y < lh; y++) for (let x = 0; x < lw; x++) {
+          const i = y * lw + x; if (!L.mask[i]) continue;
+          const px = Math.min(prevL.w - 1, x >> 1), py = Math.min(prevL.h - 1, y >> 1), j = (py * prevL.w + px) * 3;
+          L.img[i * 3] = prevL.img[j]; L.img[i * 3 + 1] = prevL.img[j + 1]; L.img[i * 3 + 2] = prevL.img[j + 2];
+        }
+        for (const t of tg) {
+          const x = t % lw, y = (t / lw) | 0;
+          const px = Math.min(prevL.w - 1, x >> 1), py = Math.min(prevL.h - 1, y >> 1);
+          const s = prevNNF[py * prevL.w + px];
+          const cx = 2 * (s % prevL.w) + (x & 1), cy = 2 * ((s / prevL.w) | 0) + (y & 1);
+          const cand = cy * lw + cx;
+          nnf[t] = (cx < lw && cy < lh && src.flag[cand]) ? cand : src.list[(Math.random() * src.list.length) | 0];
+        }
+      }
+      for (const t of tg) { const s = nnf[t]; nnd[t] = dist(L.img, lw, lh, t % lw, (t / lw) | 0, s % lw, (s / lw) | 0, Infinity); }
+      const conf = confidenceMap(L.mask, lw, lh);
+      if (prevNNF) vote(L, nnf, nnd, tg, conf);
+
+      for (let e = 0; e < em; e++) {
+        for (const t of tg) { const s = nnf[t]; nnd[t] = dist(L.img, lw, lh, t % lw, (t / lw) | 0, s % lw, (s / lw) | 0, Infinity); }
+        await patchMatch(L, nnf, nnd, tg, src, P.pm, async () => { await tick(); });
+        vote(L, nnf, nnd, tg, conf);
+        done += P.pm * tg.length;
+        onProgress(Math.min(0.99, done / totalWork));
+        await yieldUI();
+      }
+      prevNNF = nnf; prevL = L;
+    }
+
+    // 3) เขียนกลับเฉพาะพิกเซลในรู
+    for (let i = 0; i < w * h; i++) if (mask[i]) {
+      rgba[i * 4] = img0[i * 3]; rgba[i * 4 + 1] = img0[i * 3 + 1]; rgba[i * 4 + 2] = img0[i * 3 + 2]; rgba[i * 4 + 3] = 255;
+    }
+    onProgress(1);
+    return { changed: holeCount, levels: levels.length };
+  }
+
+  root.ObjectEraser = { inpaint };
+  if (typeof module !== 'undefined') module.exports = { inpaint };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* =========================================================
+   UI controller — ภาพ, ซูม/เลื่อน, เลือกพื้นที่ (แปรง + Magic), ประวัติ, ส่งออก
+   ========================================================= */
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const imgC = $('imgCanvas'), maskC = $('maskCanvas'), layers = $('layers'), scroller = $('scroller');
+  const ictx = imgC.getContext('2d', { willReadFrequently: true });
+  const mctx = maskC.getContext('2d', { willReadFrequently: true });
+  const MAX_SIDE = 4096;                 // ภาพใหญ่กว่านี้จะถูกย่อตอนเปิด
+  const MAX_WORK = 1000 * 1000;          // พื้นที่ทำงานสูงสุดต่อจุด
+  const MAX_HOLE = { fast: 25000, balanced: 50000, best: 110000 };   // พิกเซลในรูสูงสุดต่อจุด
+  const ZMIN = 0.05, ZMAX = 8, ZSTEP = 1.25;
+
+  const state = {
+    tool: 'brush', size: 28, quality: 'balanced', loaded: false, busy: false,
+    drawing: false, last: null, history: [], original: null, name: 'image', hasMask: false,
+    zoom: 1, fitMode: true, magicSub: false, tol: 32, grow: 3, contig: true, holes: true,
+    spaceHeld: false, pan: null,
+    lassoSub: false, lasso: null, aiSub: false, aiGrow: 6, aiBox: false, box: null,
+    cutFill: 'none', cutFeather: 2,
+    imgVer: 0,              // เพิ่มทุกครั้งที่ภาพเปลี่ยน (ให้ AI รู้ว่าต้องวิเคราะห์ภาพใหม่)
+  };
+  const EMBED = new URLSearchParams(location.search).has('embed');   // เปิดจากใน DocDesk
+
+  /* ---------- แจ้งเตือน ---------- */
+  let toastT;
+  function toast(msg, err) {
+    const t = $('toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
+    clearTimeout(toastT); toastT = setTimeout(() => t.className = 'toast', err ? 4200 : 2400);
+  }
+  const maskColor = () => {
+    const c = getComputedStyle(document.documentElement).getPropertyValue('--mask').trim() || '#E4368C';
+    const m = c.match(/^#([0-9a-f]{6})$/i); const n = m ? parseInt(m[1], 16) : 0xE4368C;
+    return { hex: c, r: n >> 16, g: (n >> 8) & 255, b: n & 255 };
+  };
+
+  /* ---------- อัปเดตสถานะปุ่ม ---------- */
+  function refresh() {
+    const L = state.loaded, B = state.busy;
+    $('runBtn').disabled = !L || B || !state.hasMask;
+    $('clearBtn').disabled = !L || B || !state.hasMask;
+    $('undoBtn').disabled = !L || B || !state.history.length;
+    $('peekBtn').disabled = !L || B || !state.history.some(h => h.type === 'image');
+    $('savePng').disabled = $('saveJpg').disabled = !L || B;
+    $('cutBtn').disabled = !L || B || !state.hasMask;
+    $('newBtn').disabled = B;
+    ['zoomOut', 'zoomIn', 'zoomFit', 'zoomPct'].forEach(id => $(id).disabled = !L);
+    if (L) { $('zoomOut').disabled = state.zoom <= ZMIN + 1e-6; $('zoomIn').disabled = state.zoom >= ZMAX - 1e-6; }
+  }
+
+  /* =========================================================
+     ประวัติ (ย้อนกลับได้ทั้ง "การเลือกพื้นที่" และ "การลบ")
+     - mask : เก็บเฉพาะ alpha (ประหยัดหน่วยความจำ)
+     - image: เก็บภาพก่อนลบ + พื้นที่ที่เลือกไว้ตอนนั้น
+     ========================================================= */
+  const histLimit = () => (imgC.width * imgC.height > 4e6 ? 6 : 12);
+  function maskAlpha() {
+    const d = mctx.getImageData(0, 0, maskC.width, maskC.height).data;
+    const a = new Uint8Array(maskC.width * maskC.height);
+    for (let i = 0; i < a.length; i++) a[i] = d[i * 4 + 3];
+    return a;
+  }
+  function setMaskAlpha(a) {
+    const { r, g, b } = maskColor();
+    const id = mctx.createImageData(maskC.width, maskC.height), d = id.data;
+    for (let i = 0; i < a.length; i++) if (a[i]) { const j = i * 4; d[j] = r; d[j + 1] = g; d[j + 2] = b; d[j + 3] = a[i]; }
+    mctx.putImageData(id, 0, 0);
+  }
+  function pushHistory(entry) {
+    state.history.push(entry);
+    while (state.history.length > histLimit()) state.history.shift();
+  }
+  const pushMaskHistory = () => pushHistory({ type: 'mask', alpha: maskAlpha() });
+  function undo() {
+    if (state.busy || !state.history.length) return;
+    const h = state.history.pop();
+    if (h.type === 'image') { ictx.putImageData(h.img, 0, 0); setMaskAlpha(h.alpha); state.imgVer++; toast('ย้อนการลบแล้ว'); }
+    else { setMaskAlpha(h.alpha); toast('ย้อนการเลือกพื้นที่แล้ว'); }
+    state.hasMask = maskHasPixels(); refresh();
+  }
+
+  /* =========================================================
+     ซูม / เลื่อนภาพ
+     ========================================================= */
+  function fitZoom() {
+    const pad = 24;
+    const w = scroller.clientWidth - pad, h = scroller.clientHeight - pad;
+    return Math.max(ZMIN, Math.min(1, w / imgC.width, h / imgC.height));
+  }
+  // ตั้งค่าซูม โดยคงจุด (cx,cy) บนจอให้อยู่ตำแหน่งเดิม
+  function setZoom(z, cx, cy, fit = false) {
+    if (!state.loaded) return;
+    z = Math.max(ZMIN, Math.min(ZMAX, z));
+    const sr = scroller.getBoundingClientRect(), lr = layers.getBoundingClientRect();
+    if (cx == null) { cx = sr.left + sr.width / 2; cy = sr.top + sr.height / 2; }
+    const ix = (cx - lr.left) / state.zoom, iy = (cy - lr.top) / state.zoom;   // พิกัดภาพใต้เคอร์เซอร์
+    state.zoom = z; state.fitMode = fit;
+    layers.style.width = Math.round(imgC.width * z) + 'px';
+    layers.style.height = Math.round(imgC.height * z) + 'px';
+    imgC.classList.toggle('pixel', z >= 3);
+    const nr = layers.getBoundingClientRect();
+    scroller.scrollLeft += (nr.left + ix * z) - cx;
+    scroller.scrollTop += (nr.top + iy * z) - cy;
+    $('zoomPct').textContent = Math.round(z * 100) + '%';
+    refresh();
+  }
+  const zoomFit = () => { setZoom(fitZoom(), null, null, true); scroller.scrollLeft = scroller.scrollTop = 0; };
+  const zoomBy = (f, cx, cy) => setZoom(state.zoom * f, cx, cy);
+
+  scroller.addEventListener('wheel', e => {
+    if (!state.loaded || !(e.ctrlKey || e.metaKey)) return;       // ล้อปกติ = เลื่อนภาพ
+    e.preventDefault();
+    zoomBy(Math.exp(-e.deltaY * 0.0022), e.clientX, e.clientY);
+  }, { passive: false });
+  new ResizeObserver(() => { if (state.loaded && state.fitMode) zoomFit(); }).observe(scroller);
+
+  // เลื่อนภาพด้วยการลาก (เครื่องมือ ✋ / Space ค้าง / ปุ่มกลางเมาส์)
+  // จำตำแหน่งเมาส์ล่าสุด เพื่อรู้ว่ากด Space ขณะเมาส์อยู่บนภาพหรือไม่
+  const lastPtr = { x: -1, y: -1 };
+  window.addEventListener('pointermove', e => { lastPtr.x = e.clientX; lastPtr.y = e.clientY; }, { passive: true });
+  function pointerOverCanvas() {
+    if (scroller.classList.contains('hidden')) return false;
+    const r = scroller.getBoundingClientRect();
+    return lastPtr.x >= r.left && lastPtr.x <= r.right && lastPtr.y >= r.top && lastPtr.y <= r.bottom;
+  }
+  const panning = e => state.tool === 'hand' || state.spaceHeld || e.button === 1;
+  function startPan(e) {
+    state.pan = { x: e.clientX, y: e.clientY, sl: scroller.scrollLeft, st: scroller.scrollTop };
+    layers.classList.add('panning');
+  }
+
+  /* =========================================================
+     โหลดภาพ
+     ========================================================= */
+  function loadImageSource(src, name) {
+    const im = new Image();
+    im.onload = () => {
+      let w = im.naturalWidth, h = im.naturalHeight;
+      const s = Math.min(1, MAX_SIDE / Math.max(w, h));
+      w = Math.round(w * s); h = Math.round(h * s);
+      imgC.width = maskC.width = w; imgC.height = maskC.height = h;
+      ictx.drawImage(im, 0, 0, w, h);
+      mctx.clearRect(0, 0, w, h);
+      state.loaded = true; state.history = []; state.hasMask = false; state.imgVer++; AI.last = null;
+      state.original = ictx.getImageData(0, 0, w, h);
+      state.name = (name || 'image').replace(/\.[^.]+$/, '');
+      scroller.classList.remove('hidden'); $('zoombar').classList.remove('hidden'); $('drop').classList.add('hidden');
+      $('lassoSvg').setAttribute('viewBox', `0 0 ${w} ${h}`);
+      $('info').textContent = `${state.name} · ${w}×${h} px` + (s < 1 ? ' (ย่อจากต้นฉบับ)' : '');
+      $('timeInfo').textContent = '';
+      state.zoom = 1; zoomFit();
+      if (src.startsWith('blob:')) URL.revokeObjectURL(src);
+    };
+    im.onerror = () => toast('เปิดไฟล์นี้ไม่ได้ — ใช้ภาพ JPG, PNG หรือ WebP', true);
+    im.src = src;
+  }
+  function loadFile(f) {
+    if (!f || !f.type.startsWith('image/')) { toast('ไฟล์นี้ไม่ใช่รูปภาพ', true); return; }
+    loadImageSource(URL.createObjectURL(f), f.name);
+  }
+
+  /* ---------- ภาพตัวอย่าง (วาดขึ้นเอง ไม่ต้องโหลดจากเน็ต) ---------- */
+  function makeDemo() {
+    const c = document.createElement('canvas'); c.width = 900; c.height = 560;
+    const g = c.getContext('2d');
+    const sky = g.createLinearGradient(0, 0, 0, 380);
+    sky.addColorStop(0, '#2a4f8f'); sky.addColorStop(1, '#f2b27a');
+    g.fillStyle = sky; g.fillRect(0, 0, 900, 380);
+    g.fillStyle = '#fff4d6'; g.beginPath(); g.arc(700, 250, 46, 0, 7); g.fill();
+    g.fillStyle = '#34485f'; g.beginPath(); g.moveTo(0, 330);
+    for (let x = 0; x <= 900; x += 30) g.lineTo(x, 300 + Math.sin(x / 70) * 30 + Math.cos(x / 23) * 8);
+    g.lineTo(900, 400); g.lineTo(0, 400); g.fill();
+    const sea = g.createLinearGradient(0, 380, 0, 560);
+    sea.addColorStop(0, '#2f6f86'); sea.addColorStop(1, '#123448');
+    g.fillStyle = sea; g.fillRect(0, 380, 900, 180);
+    for (let i = 0; i < 700; i++) {
+      const y = 385 + Math.random() * 175, x = Math.random() * 900, l = 6 + Math.random() * 22;
+      g.strokeStyle = `rgba(255,255,255,${0.05 + Math.random() * 0.18})`; g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + l, y); g.stroke();
+    }
+    g.strokeStyle = '#111'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, 90); g.quadraticCurveTo(450, 170, 900, 70); g.stroke();
+    g.fillStyle = '#ffd400'; g.fillRect(60, 470, 250, 54);
+    g.fillStyle = '#111'; g.font = 'bold 26px sans-serif'; g.fillText('SAMPLE ©2026', 78, 506);
+    g.fillStyle = '#e8262f'; g.beginPath(); g.arc(200, 190, 26, 0, 7); g.fill();   // ลูกโป่งแดง (ลองใช้ Magic)
+    g.strokeStyle = '#eee'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(200, 216); g.lineTo(206, 262); g.stroke();
+    g.fillStyle = '#1a1a1a'; g.beginPath(); g.moveTo(420, 200); g.quadraticCurveTo(440, 180, 460, 200); g.quadraticCurveTo(480, 180, 500, 200);
+    g.lineTo(460, 210); g.fill();
+    loadImageSource(c.toDataURL('image/png'), 'ภาพตัวอย่าง');
+    setTimeout(() => toast('ลอง 🪄 Magic คลิกที่ลูกโป่งแดง / ป้ายเหลือง แล้วกด “ลบวัตถุ”'), 400);
+  }
+
+  /* =========================================================
+     เลือกพื้นที่: แปรง
+     ========================================================= */
+  const scale = () => imgC.width / maskC.getBoundingClientRect().width;   // px ภาพ ต่อ px จอ
+  function pos(e) {
+    const r = maskC.getBoundingClientRect(), s = scale();
+    return { x: (e.clientX - r.left) * s, y: (e.clientY - r.top) * s };
+  }
+  function stroke(a, b) {
+    mctx.save();
+    const brush = state.tool === 'brush';
+    mctx.globalCompositeOperation = brush ? 'source-over' : 'destination-out';
+    mctx.strokeStyle = maskColor().hex;
+    mctx.lineCap = mctx.lineJoin = 'round';
+    // ยางลบกว้างกว่าแปรงเล็กน้อย เพื่อไม่ให้เหลือขอบจางจาก anti-alias
+    mctx.lineWidth = state.size * scale() + (brush ? 0 : 3);
+    mctx.beginPath(); mctx.moveTo(a.x, a.y); mctx.lineTo(b.x + 0.01, b.y); mctx.stroke();
+    mctx.restore();
+  }
+  function maskHasPixels() {
+    const d = mctx.getImageData(0, 0, maskC.width, maskC.height).data;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 8) return true;   // เกณฑ์เดียวกับตอนประมวลผล
+    return false;
+  }
+  function moveCursor(e) {
+    const r = layers.getBoundingClientRect(), c = $('cursor');
+    c.style.display = 'block'; c.style.width = c.style.height = state.size + 'px';
+    c.style.left = (e.clientX - r.left) + 'px'; c.style.top = (e.clientY - r.top) + 'px';
+    c.style.borderStyle = state.tool === 'brush' ? 'solid' : 'dashed';
+  }
+
+  /* =========================================================
+     เลือกพื้นที่: 🪄 Magic (Magic Wand)
+     คลิก 1 จุด → เลือกพิกเซลที่สีใกล้เคียงกับจุดนั้น แล้วขยายขอบ
+     ========================================================= */
+  function magicSelect(px, py, subtract) {
+    const W = imgC.width, H = imgC.height;
+    const x0 = Math.floor(px), y0 = Math.floor(py);
+    if (x0 < 0 || y0 < 0 || x0 >= W || y0 >= H) return;
+    const d = ictx.getImageData(0, 0, W, H).data;
+    const s = (y0 * W + x0) * 4, sr = d[s], sg = d[s + 1], sb = d[s + 2];
+    // ความไวสี = ต่างได้ไม่เกิน tol ในทุกช่องสี R, G, B (แบบเดียวกับ Magic Wand ของ Photoshop)
+    const t = state.tol;
+    const near = i => Math.abs(d[i] - sr) <= t && Math.abs(d[i + 1] - sg) <= t && Math.abs(d[i + 2] - sb) <= t;
+    const sel = new Uint8Array(W * H);
+    let count = 0;
+    if (state.contig) {
+      // flood fill แบบ scanline (เร็วและไม่ stack overflow)
+      const stack = new Int32Array(W * H + 1); let sp = 0;
+      stack[sp++] = y0 * W + x0;
+      while (sp) {
+        const p = stack[--sp]; const y = (p / W) | 0; let x = p - y * W;
+        if (sel[p]) continue;
+        while (x > 0 && !sel[y * W + x - 1] && near((y * W + x - 1) * 4)) x--;
+        let upOpen = false, dnOpen = false;
+        for (; x < W; x++) {
+          const i = y * W + x;
+          if (sel[i] || !near(i * 4)) break;
+          sel[i] = 1; count++;
+          if (y > 0) { const u = i - W; const ok = !sel[u] && near(u * 4);
+            if (ok && !upOpen) { stack[sp++] = u; upOpen = true; } else if (!ok) upOpen = false; }
+          if (y < H - 1) { const v = i + W; const ok = !sel[v] && near(v * 4);
+            if (ok && !dnOpen) { stack[sp++] = v; dnOpen = true; } else if (!ok) dnOpen = false; }
+        }
+      }
+    } else {
+      for (let i = 0; i < W * H; i++) if (near(i * 4)) { sel[i] = 1; count++; }
+    }
+    if (count > W * H * 0.35 && !subtract) {
+      toast(`สีคล้ายกันกินพื้นที่ ${(count / (W * H) * 100).toFixed(0)}% ของภาพ — ลดค่าความไวสีลง แล้วคลิกใหม่`, true);
+      return;
+    }
+    if (state.holes && !subtract) fillHoles(sel, W, H);
+    const changed = applySelection(dilate(sel, W, H, state.grow), subtract, true);
+    if (!changed) { toast(subtract ? 'ไม่มีพื้นที่ที่เลือกตรงนี้' : 'บริเวณนี้ถูกเลือกไว้แล้ว'); return; }
+    const pct = (count / (W * H) * 100);
+    toast(subtract ? 'ตัดพื้นที่แล้ว' : `🪄 เลือกแล้ว ${pct < 0.1 ? '<0.1' : pct.toFixed(1)}% ของภาพ`);
+  }
+  /* ใส่/ตัดพื้นที่ (Uint8Array ขนาดเท่าภาพ) ลงเลเยอร์ที่เลือก
+     withHistory = true → เก็บประวัติให้ย้อนได้ (ไม่เก็บถ้าไม่มีอะไรเปลี่ยน) · คืนจำนวนพิกเซลที่เปลี่ยน */
+  function applySelection(sel, subtract, withHistory) {
+    const W = maskC.width, H = maskC.height;
+    const { r, g, b } = maskColor();
+    const md = mctx.getImageData(0, 0, W, H), m = md.data;
+    let changed = 0;
+    const snapshot = withHistory ? maskAlpha() : null;
+    for (let i = 0; i < W * H; i++) {
+      if (!sel[i]) continue;
+      const j = i * 4;
+      if (subtract) { if (m[j + 3]) { m[j + 3] = 0; changed++; } }
+      else { if (m[j + 3] !== 255) changed++; m[j] = r; m[j + 1] = g; m[j + 2] = b; m[j + 3] = 255; }
+    }
+    if (!changed) return 0;
+    if (withHistory) pushHistory({ type: 'mask', alpha: snapshot });
+    mctx.putImageData(md, 0, 0);
+    state.hasMask = maskHasPixels(); refresh();
+    return changed;
+  }
+
+  /* =========================================================
+     เลือกพื้นที่: ➰ Lasso (ลากเส้นล้อมรอบ)
+     ========================================================= */
+  const lassoSvg = $('lassoSvg');
+  function lassoDraw() {
+    const pts = state.lasso.pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+    lassoSvg.querySelectorAll('polyline').forEach(pl => pl.setAttribute('points', pts));
+  }
+  /* ---- ลากกรอบสำหรับ AI ---- */
+  function boxStart(e) {
+    const p = pos(e);
+    state.box = { x0: p.x, y0: p.y, x1: p.x, y1: p.y, sub: state.aiSub || e.altKey, raf: 0 };
+    lassoSvg.classList.toggle('sub', state.box.sub);
+    lassoSvg.classList.add('box'); lassoSvg.classList.remove('hidden'); boxDraw();
+  }
+  function boxDraw() {
+    const b = state.box;
+    const pts = [[b.x0, b.y0], [b.x1, b.y0], [b.x1, b.y1], [b.x0, b.y1], [b.x0, b.y0]]
+      .map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
+    lassoSvg.querySelectorAll('polyline').forEach(pl => pl.setAttribute('points', pts));
+  }
+  function boxMove(e) {
+    const b = state.box, p = pos(e);
+    b.x1 = p.x; b.y1 = p.y;
+    if (!b.raf) b.raf = requestAnimationFrame(() => { b.raf = 0; if (state.box === b) boxDraw(); });
+  }
+  function boxEnd() {
+    const b = state.box; state.box = null;
+    lassoSvg.classList.add('hidden'); lassoSvg.classList.remove('box');
+    if (!b) return;
+    const x0 = Math.max(0, Math.min(b.x0, b.x1)), x1 = Math.min(imgC.width - 1, Math.max(b.x0, b.x1));
+    const y0 = Math.max(0, Math.min(b.y0, b.y1)), y1 = Math.min(imgC.height - 1, Math.max(b.y0, b.y1));
+    if (x1 - x0 < 8 || y1 - y0 < 8) { toast('ลากกรอบให้ครอบวัตถุก่อน (กรอบเล็กเกินไป)'); return; }
+    aiRun({ box: { x0, y0, x1, y1 }, sub: b.sub });
+  }
+
+  function lassoStart(e) {
+    const p = pos(e);
+    state.lasso = { pts: [p], sub: state.lassoSub || e.altKey, raf: 0 };
+    lassoSvg.classList.toggle('sub', state.lasso.sub);
+    lassoSvg.classList.remove('hidden'); lassoDraw();
+  }
+  function lassoMove(e) {
+    const L = state.lasso, p = pos(e), q = L.pts[L.pts.length - 1];
+    const minStep = 1.5 * scale();                       // ระยะขั้นต่ำ 1.5 px บนจอ
+    if (Math.hypot(p.x - q.x, p.y - q.y) < minStep) return;
+    L.pts.push(p);
+    if (!L.raf) L.raf = requestAnimationFrame(() => { L.raf = 0; if (state.lasso === L) lassoDraw(); });
+  }
+  function lassoEnd() {
+    const L = state.lasso; state.lasso = null;
+    lassoSvg.classList.add('hidden');
+    if (!L || L.pts.length < 3) { toast('ลากเส้นให้ล้อมรอบวัตถุ แล้วค่อยปล่อย'); return; }
+    // วาดรูปหลายเหลี่ยมลงแคนวาสชั่วคราว แล้วแปลงเป็นพื้นที่ที่เลือก
+    const W = maskC.width, H = maskC.height;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.beginPath(); x.moveTo(L.pts[0].x, L.pts[0].y);
+    for (let i = 1; i < L.pts.length; i++) x.lineTo(L.pts[i].x, L.pts[i].y);
+    x.closePath(); x.fillStyle = '#000'; x.fill();
+    x.lineWidth = 1.5; x.strokeStyle = '#000'; x.stroke();        // เก็บขอบให้ครบ
+    const d = x.getImageData(0, 0, W, H).data, sel = new Uint8Array(W * H);
+    let n = 0;
+    for (let i = 0; i < W * H; i++) if (d[i * 4 + 3] > 96) { sel[i] = 1; n++; }
+    if (!n) { toast('พื้นที่ที่ล้อมเล็กเกินไป'); return; }
+    const changed = applySelection(sel, L.sub, true);
+    if (!changed) toast(L.sub ? 'ไม่มีพื้นที่ที่เลือกในเส้นนี้' : 'บริเวณนี้ถูกเลือกไว้แล้ว');
+    else toast(L.sub ? 'ตัดพื้นที่แล้ว' : '➰ เพิ่มพื้นที่แล้ว');
+  }
+
+  /* =========================================================
+     เลือกพื้นที่: 🤖 AI (SlimSAM ผ่าน Transformers.js)
+     - โหลดไลบรารี + โมเดลครั้งแรกเมื่อผู้ใช้กดเปิดใช้เท่านั้น
+     - วิเคราะห์ภาพ (encoder) ครั้งเดียวต่อภาพ · คลิกแต่ละครั้งใช้แค่ decoder (เร็ว)
+     ========================================================= */
+  const AI_LIB = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.0/dist/transformers.min.js';
+  const AI_MODEL = 'Xenova/slimsam-77-uniform';
+  const AI = { status: 'idle', T: null, model: null, proc: null, emb: null, embVer: -1, info: null, busy: false, last: null, files: {} };
+  function aiSetStatus(kind, text, pct) {
+    AI.status = kind;
+    const st = $('aiStatus'); st.className = 'ai-status ' + kind; $('aiText').textContent = text;
+    const bar = $('aiBar');
+    bar.classList.toggle('hidden', pct == null);
+    if (pct != null) bar.firstElementChild.style.width = Math.round(pct * 100) + '%';
+    $('aiLoadBtn').classList.toggle('hidden', kind === 'ready' || kind === 'working' || kind === 'loading');
+    $('aiLoadBtn').textContent = kind === 'error' ? '↻ ลองเปิดใช้ AI อีกครั้ง' : '⚡ เปิดใช้ AI';
+    layers.classList.toggle('ai-busy', kind === 'working' || kind === 'loading');
+  }
+  const mb = n => (n / 1048576).toFixed(1);
+  async function aiLoad() {
+    if (AI.model || AI.status === 'loading') return !!AI.model;
+    aiSetStatus('loading', 'กำลังโหลดไลบรารี AI…', 0.02);
+    try {
+      AI.T = AI.T || await import(AI_LIB);
+      AI.T.env.allowLocalModels = false;
+      AI.files = {};
+      const onProgress = e => {
+        if (e.status !== 'progress' || !e.total) return;
+        AI.files[e.file] = { l: e.loaded, t: e.total };
+        let l = 0, t = 0; for (const k in AI.files) { l += AI.files[k].l; t += AI.files[k].t; }
+        aiSetStatus('loading', `กำลังดาวน์โหลดโมเดล ${mb(l)} / ${mb(t)} MB`, 0.05 + 0.9 * (l / t));
+      };
+      aiSetStatus('loading', 'กำลังดาวน์โหลดโมเดล…', 0.05);
+      AI.model = await AI.T.SamModel.from_pretrained(AI_MODEL, { dtype: 'q8', device: 'wasm', progress_callback: onProgress });
+      AI.proc = await AI.T.AutoProcessor.from_pretrained(AI_MODEL, { progress_callback: onProgress });
+      const names = (AI.model.sessions && AI.model.sessions.prompt_encoder_mask_decoder &&
+                     AI.model.sessions.prompt_encoder_mask_decoder.inputNames) || [];
+      AI.boxNative = names.indexOf('input_boxes') >= 0;   // โมเดลบางตัวรับกรอบโดยตรง
+      aiSetStatus('ready', 'AI พร้อมใช้งาน — คลิกที่วัตถุในภาพได้เลย');
+      return true;
+    } catch (err) {
+      console.error(err);
+      AI.model = null;
+      const blocked = inViewer || location.protocol === 'file:';
+      aiSetStatus('error', blocked
+        ? 'หน้านี้โหลดโมเดล AI ไม่ได้ — เปิดผ่าน DocDesk (GitHub Pages) เพื่อใช้ AI'
+        : 'โหลด AI ไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ต แล้วลองใหม่');
+      return false;
+    }
+  }
+  // วิเคราะห์ภาพ (ย่อด้านยาวไม่เกิน 1024 px ตามที่โมเดลใช้)
+  async function aiEmbed() {
+    if (AI.embVer === state.imgVer && AI.emb) return;
+    aiSetStatus('working', 'AI กำลังวิเคราะห์ภาพ… (ครั้งแรกของภาพนี้)');
+    await new Promise(r => setTimeout(r, 30));
+    const W = imgC.width, H = imgC.height, k = Math.min(1, 1024 / Math.max(W, H));
+    const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(W * k)); c.height = Math.max(1, Math.round(H * k));
+    const cx = c.getContext('2d', { willReadFrequently: true }); cx.imageSmoothingQuality = 'high'; cx.drawImage(imgC, 0, 0, c.width, c.height);
+    const raw = AI.T.RawImage.fromCanvas(c).rgb();
+    const inputs = await AI.proc(raw);
+    AI.emb = await AI.model.get_image_embeddings(inputs);
+    AI.info = { k, w: c.width, h: c.height, orig: inputs.original_sizes, resh: inputs.reshaped_input_sizes };
+    AI.embVer = state.imgVer;
+  }
+  // จุดบวก/ลบ (+กรอบ ถ้ามี) พิกัดภาพจริง → พื้นที่ที่เลือกขนาดเท่าภาพ
+  async function aiMask(points, labels, box) {
+    const { k, orig, resh } = AI.info;
+    const pts = points.map(p => [p.x * k, p.y * k]);
+    const input_points = AI.proc.reshape_input_points([pts], orig, resh);
+    const input_labels = AI.proc.image_processor.add_input_labels([labels], input_points);
+    const feed = { ...AI.emb, input_points, input_labels };
+    if (box && AI.boxNative) {
+      // โมเดลรองรับกรอบโดยตรง (ถ้าไม่รองรับ ไลบรารีจะข้ามอินพุตนี้ไปเอง)
+      feed.input_boxes = AI.proc.reshape_input_points([[[box.x0 * k, box.y0 * k, box.x1 * k, box.y1 * k]]], orig, resh, true);
+    }
+    const out = await AI.model(feed);
+    const masks = await AI.proc.post_process_masks(out.pred_masks, orig, resh);
+    const m = masks[0], dims = m.dims, mh = dims[dims.length - 2], mw = dims[dims.length - 1];
+    const scores = out.iou_scores.data, nMask = scores.length;
+    let best = 0; for (let i = 1; i < nMask; i++) if (scores[i] > scores[best]) best = i;
+    const plane = m.data.subarray(best * mh * mw, (best + 1) * mh * mw);
+    // ขยายหน้ากากกลับเป็นขนาดภาพจริง
+    const small = document.createElement('canvas'); small.width = mw; small.height = mh;
+    const sctx = small.getContext('2d'); const id = sctx.createImageData(mw, mh);
+    for (let i = 0; i < plane.length; i++) if (plane[i]) id.data[i * 4 + 3] = 255;
+    sctx.putImageData(id, 0, 0);
+    const W = imgC.width, H = imgC.height;
+    const big = document.createElement('canvas'); big.width = W; big.height = H;
+    const bctx = big.getContext('2d', { willReadFrequently: true }); bctx.imageSmoothingQuality = 'high';
+    bctx.drawImage(small, 0, 0, W, H);
+    const bd = bctx.getImageData(0, 0, W, H).data, sel = new Uint8Array(W * H);
+    let n = 0;
+    if (box) {                       // โหมดกรอบ: เก็บเฉพาะในกรอบที่ลาก
+      const x0 = Math.round(box.x0), x1 = Math.round(box.x1), y0 = Math.round(box.y0), y1 = Math.round(box.y1);
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        const i = y * W + x; if (bd[i * 4 + 3] >= 128) { sel[i] = 1; n++; }
+      }
+    } else {
+      for (let i = 0; i < W * H; i++) if (bd[i * 4 + 3] >= 128) { sel[i] = 1; n++; }
+    }
+    return { sel, n, score: scores[best] };
+  }
+  // ชี้ด้วยการคลิก (opt.point) หรือกรอบ (opt.box)
+  async function aiRun(opt) {
+    if (AI.busy) { toast('AI กำลังทำงาน รอสักครู่'); return; }
+    if (!AI.model) { const ok = await aiLoad(); if (!ok) return; }
+    const e = opt.ev || {};
+    const p = opt.point;
+    if (p && (p.x < 0 || p.y < 0 || p.x >= imgC.width || p.y >= imgC.height)) return;
+    AI.busy = true;
+    try {
+      await aiEmbed();
+      aiSetStatus('working', 'AI กำลังหาขอบวัตถุ…');
+      const W = imgC.width, H = imgC.height;
+      // Shift = ปรับชิ้นล่าสุด (ใช้ได้เมื่อยังไม่มีการแก้ไขอื่นหลังจากนั้น)
+      const top = state.history[state.history.length - 1];
+      const refine = !!p && e.shiftKey && AI.last && AI.last.ver === state.imgVer && top === AI.last.entry;
+      let job;
+      if (refine) {
+        job = { points: AI.last.points.concat([p]), labels: AI.last.labels.concat([e.altKey ? 0 : 1]), sub: AI.last.sub, box: AI.last.box };
+      } else if (opt.box) {
+        const b = opt.box, cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+        const points = [{ x: cx, y: cy }], labels = [1];
+        if (!AI.boxNative) {
+          // โมเดลไม่รองรับกรอบ → ใช้จุดกลางกรอบ + จุดลบรอบนอก ช่วยจำกัดขอบเขต
+          const mx = (b.x1 - b.x0) * 0.06 + 3, my = (b.y1 - b.y0) * 0.06 + 3;
+          [[cx, b.y0 - my], [cx, b.y1 + my], [b.x0 - mx, cy], [b.x1 + mx, cy]].forEach(q => {
+            if (q[0] >= 0 && q[1] >= 0 && q[0] < imgC.width && q[1] < imgC.height) { points.push({ x: q[0], y: q[1] }); labels.push(0); }
+          });
+        }
+        job = { points, labels, sub: opt.sub, box: b };
+      } else {
+        job = { points: [p], labels: [1], sub: state.aiSub || e.altKey, box: null };
+      }
+      const { sel, n } = await aiMask(job.points, job.labels, job.box);
+      if (!n) { toast('AI ไม่พบวัตถุตรงจุดนี้ ลองคลิกกลางวัตถุ'); return; }
+      if (!job.sub && n > W * H * 0.9) { toast('AI เลือกเกือบทั้งภาพ — ลองคลิกที่วัตถุให้ชัดขึ้น', true); return; }
+      const grown = dilate(sel, W, H, state.aiGrow);
+      if (refine) {
+        setMaskAlpha(AI.last.entry.alpha);                 // คืนสภาพก่อนชิ้นล่าสุด แล้วใส่ผลใหม่แทน
+        applySelection(grown, job.sub, false);
+        state.hasMask = maskHasPixels(); refresh();
+      } else {
+        const changed = applySelection(grown, job.sub, true);
+        if (!changed) { toast(job.sub ? 'ไม่มีพื้นที่ที่เลือกตรงนี้' : 'วัตถุนี้ถูกเลือกไว้แล้ว'); return; }
+      }
+      AI.last = { ...job, ver: state.imgVer, entry: state.history[state.history.length - 1] };
+      const pct = n / (W * H) * 100;
+      toast((refine ? '🤖 ปรับชิ้นล่าสุดแล้ว' : job.sub ? '🤖 ตัดวัตถุแล้ว' : job.box ? '🤖 เลือกวัตถุในกรอบแล้ว' : '🤖 เลือกวัตถุแล้ว') + ` (${pct < 0.1 ? '<0.1' : pct.toFixed(1)}% ของภาพ)`);
+    } catch (err) {
+      console.error(err);
+      toast('AI ประมวลผลไม่สำเร็จ: ' + (err && err.message ? err.message : err), true);
+    } finally {
+      AI.busy = false;
+      if (AI.model) aiSetStatus('ready', 'AI พร้อมใช้งาน — คลิกที่วัตถุในภาพได้เลย');
+    }
+  }
+  // เติมช่องว่างที่ถูกล้อมรอบด้วยพื้นที่ที่เลือก (ทำเฉพาะในกรอบของพื้นที่ เพื่อความเร็ว)
+  function fillHoles(sel, W, H) {
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (sel[y * W + x]) {
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0) return;
+    const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+    const out = new Uint8Array(bw * bh), q = new Int32Array(bw * bh); let qt = 0, qh = 0;
+    const seed = (x, y) => { const i = y * bw + x; if (!out[i] && !sel[(y + y0) * W + x + x0]) { out[i] = 1; q[qt++] = i; } };
+    for (let x = 0; x < bw; x++) { seed(x, 0); seed(x, bh - 1); }
+    for (let y = 0; y < bh; y++) { seed(0, y); seed(bw - 1, y); }
+    while (qh < qt) {                       // ไล่จากขอบกรอบ = "ข้างนอก"
+      const i = q[qh++], x = i % bw, y = (i / bw) | 0;
+      if (x > 0) seed(x - 1, y); if (x < bw - 1) seed(x + 1, y);
+      if (y > 0) seed(x, y - 1); if (y < bh - 1) seed(x, y + 1);
+    }
+    for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++)
+      if (!out[y * bw + x]) sel[(y + y0) * W + x + x0] = 1;   // ไม่ถึงจากข้างนอก = ช่องว่างข้างใน
+  }
+  // ขยายพื้นที่ออก r px (แยกแนวนอน/แนวตั้ง = กรอบสี่เหลี่ยม เร็ว)
+  function dilate(src, w, h, r) {
+    if (r <= 0) return src;
+    const tmp = new Uint8Array(w * h), out = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) { const row = y * w; let last = -1e9;
+      for (let x = 0; x < w; x++) { if (src[row + x]) last = x; if (x - last <= r) tmp[row + x] = 1; }
+      last = 1e9; for (let x = w - 1; x >= 0; x--) { if (src[row + x]) last = x; if (last - x <= r) tmp[row + x] = 1; } }
+    for (let x = 0; x < w; x++) { let last = -1e9;
+      for (let y = 0; y < h; y++) { if (tmp[y * w + x]) last = y; if (y - last <= r) out[y * w + x] = 1; }
+      last = 1e9; for (let y = h - 1; y >= 0; y--) { if (tmp[y * w + x]) last = y; if (last - y <= r) out[y * w + x] = 1; } }
+    return out;
+  }
+
+  /* ---------- เหตุการณ์เมาส์/นิ้วบนภาพ ---------- */
+  maskC.addEventListener('pointerdown', e => {
+    if (!state.loaded || state.busy) return;
+    if (panning(e)) { e.preventDefault(); maskC.setPointerCapture(e.pointerId); startPan(e); return; }
+    if (e.button !== 0) return;
+    if (state.tool === 'magic') { const p = pos(e); magicSelect(p.x, p.y, state.magicSub || e.altKey); return; }
+    if (state.tool === 'ai') {
+      if (state.aiBox) { maskC.setPointerCapture(e.pointerId); boxStart(e); }
+      else aiRun({ point: pos(e), ev: e });
+      return;
+    }
+    maskC.setPointerCapture(e.pointerId);
+    if (state.tool === 'lasso') { lassoStart(e); return; }
+    pushMaskHistory();
+    state.drawing = true; state.last = pos(e); stroke(state.last, state.last);
+  });
+  maskC.addEventListener('pointermove', e => {
+    if (state.pan) {
+      scroller.scrollLeft = state.pan.sl - (e.clientX - state.pan.x);
+      scroller.scrollTop = state.pan.st - (e.clientY - state.pan.y);
+      return;
+    }
+    if (state.box) { boxMove(e); return; }
+    if (state.lasso) { lassoMove(e); return; }
+    if (state.tool === 'brush' || state.tool === 'erase') { if (!state.spaceHeld) moveCursor(e); }
+    if (!state.drawing) return;
+    const p = pos(e); stroke(state.last, p); state.last = p;
+  });
+  const endStroke = () => {
+    if (state.pan) { state.pan = null; layers.classList.remove('panning'); return; }
+    if (state.box) { boxEnd(); return; }
+    if (state.lasso) { lassoEnd(); return; }
+    if (!state.drawing) return;
+    state.drawing = false; state.hasMask = maskHasPixels();
+    // ลากยางลบบนพื้นที่ว่าง = ไม่มีอะไรเปลี่ยน → ไม่ต้องเก็บประวัติ
+    const top = state.history[state.history.length - 1];
+    if (top && top.type === 'mask' && !state.hasMask && !top.alpha.some(v => v > 8)) state.history.pop();
+    refresh();
+  };
+  maskC.addEventListener('pointerup', endStroke);
+  maskC.addEventListener('pointercancel', endStroke);
+  maskC.addEventListener('pointerleave', () => { $('cursor').style.display = 'none'; });
+  maskC.addEventListener('auxclick', e => e.preventDefault());
+
+  /* =========================================================
+     สร้าง mask สำหรับประมวลผล (ขยายขอบ 2px) + แยกเป็นกลุ่มๆ
+     ========================================================= */
+  function buildMask(w, h) {
+    const d = mctx.getImageData(0, 0, w, h).data;
+    const m = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) if (d[i * 4 + 3] > 8) m[i] = 1;
+    const out = dilate(m, w, h, 2);
+    const lab = new Int32Array(w * h), q = new Int32Array(w * h), regions = [];
+    for (let s0 = 0; s0 < w * h; s0++) {
+      if (!out[s0] || lab[s0]) continue;
+      const id = regions.length + 1; let qh = 0, qt = 0; q[qt++] = s0; lab[s0] = id;
+      let x0 = w, y0 = h, x1 = -1, y1 = -1;
+      while (qh < qt) {
+        const i = q[qh++], x = i % w, y = (i / w) | 0;
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+        if (x > 0 && out[i - 1] && !lab[i - 1]) { lab[i - 1] = id; q[qt++] = i - 1; }
+        if (x < w - 1 && out[i + 1] && !lab[i + 1]) { lab[i + 1] = id; q[qt++] = i + 1; }
+        if (y > 0 && out[i - w] && !lab[i - w]) { lab[i - w] = id; q[qt++] = i - w; }
+        if (y < h - 1 && out[i + w] && !lab[i + w]) { lab[i + w] = id; q[qt++] = i + w; }
+      }
+      regions.push({ id, x0, y0, x1, y1, px: qt });
+    }
+    return { lab, regions };
+  }
+
+  /* =========================================================
+     ลบวัตถุ
+     ========================================================= */
+  // ประมวลผลหนึ่งกลุ่ม: ตัดเฉพาะรอบๆ จุดนั้น (+ขอบ) → เร็ว และได้ลายที่ใกล้เคียง
+  async function processRegion(reg, lab, W, H, od, onP) {
+    const bw = reg.x1 - reg.x0 + 1, bh = reg.y1 - reg.y0 + 1;
+    const margin = Math.round(Math.max(48, 1.5 * Math.min(bw, bh), 0.35 * Math.max(bw, bh)));
+    const cx0 = Math.max(0, reg.x0 - margin), cy0 = Math.max(0, reg.y0 - margin);
+    const cx1 = Math.min(W - 1, reg.x1 + margin), cy1 = Math.min(H - 1, reg.y1 + margin);
+    const cw = cx1 - cx0 + 1, ch = cy1 - cy0 + 1;
+    // ย่อพื้นที่ทำงานถ้า (ก) กรอบใหญ่เกิน หรือ (ข) รูมีพิกเซลมากเกินระดับคุณภาพ
+    const k = Math.min(1, Math.sqrt(MAX_WORK / (cw * ch)), Math.sqrt(MAX_HOLE[state.quality] / reg.px));
+    const pw = Math.max(1, Math.round(cw * k)), ph = Math.max(1, Math.round(ch * k));
+
+    const work = document.createElement('canvas'); work.width = pw; work.height = ph;
+    const wctx = work.getContext('2d', { willReadFrequently: true });
+    wctx.imageSmoothingQuality = 'high';
+    // imgC มีผลของจุดก่อนหน้าแล้ว (putImageData หลังจบแต่ละจุด)
+    wctx.drawImage(imgC, cx0, cy0, cw, ch, 0, 0, pw, ph);
+    const wd = wctx.getImageData(0, 0, pw, ph);
+    // mask ขนาดประมวลผล: เป็นรูถ้าครอบพิกเซลที่ถูกเลือกแม้แต่จุดเดียว
+    const wm = new Uint8Array(pw * ph);
+    for (let y = 0; y < ph; y++) {
+      const sy0 = cy0 + Math.floor(y / k), sy1 = Math.min(H - 1, cy0 + Math.ceil((y + 1) / k) - 1);
+      for (let x = 0; x < pw; x++) {
+        const sx0 = cx0 + Math.floor(x / k), sx1 = Math.min(W - 1, cx0 + Math.ceil((x + 1) / k) - 1);
+        let hit = 0;
+        for (let yy = sy0; yy <= Math.max(sy0, sy1) && !hit; yy++)
+          for (let xx = sx0; xx <= Math.max(sx0, sx1); xx++) if (lab[yy * W + xx]) { hit = 1; break; }
+        wm[y * pw + x] = hit;
+      }
+    }
+    await ObjectEraser.inpaint(wd.data, wm, pw, ph, { quality: state.quality, onProgress: onP });
+
+    let src = wd.data;
+    if (k < 1) {
+      wctx.putImageData(wd, 0, 0);
+      const up = document.createElement('canvas'); up.width = cw; up.height = ch;
+      const uctx = up.getContext('2d', { willReadFrequently: true });
+      uctx.imageSmoothingQuality = 'high'; uctx.drawImage(work, 0, 0, cw, ch);
+      src = uctx.getImageData(0, 0, cw, ch).data;
+    }
+    for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+      const gi = (y + cy0) * W + (x + cx0); if (lab[gi] !== reg.id) continue;
+      const si = (y * cw + x) * 4, di = gi * 4;
+      od[di] = src[si]; od[di + 1] = src[si + 1]; od[di + 2] = src[si + 2]; od[di + 3] = 255;
+    }
+  }
+
+  async function run() {
+    if (state.busy || !state.loaded) return;
+    const W = imgC.width, H = imgC.height;
+    const { lab, regions } = buildMask(W, H);
+    if (!regions.length) { toast('ยังไม่ได้เลือกพื้นที่ที่ต้องการลบ', true); return; }
+
+    state.busy = true; refresh();
+    $('busy').classList.remove('hidden'); $('barFill').style.width = '0%'; $('busyPct').textContent = '0%';
+    const before = ictx.getImageData(0, 0, W, H);
+    const alphaBefore = maskAlpha();
+    const out = ictx.getImageData(0, 0, W, H);
+    const t0 = performance.now();
+    regions.sort((a, b) => b.px - a.px);
+    const total = regions.reduce((t, r) => t + r.px, 0);
+    let doneW = 0;
+    try {
+      for (let i = 0; i < regions.length; i++) {
+        const r = regions[i], wt = r.px / total;
+        $('busyText').textContent = regions.length > 1 ? `กำลังลบวัตถุ จุดที่ ${i + 1}/${regions.length}…` : 'กำลังลบวัตถุ…';
+        await processRegion(r, lab, W, H, out.data, p => {
+          const v = Math.round((doneW + p * wt) * 100);
+          $('barFill').style.width = v + '%'; $('busyPct').textContent = v + '%';
+        });
+        doneW += wt;
+        ictx.putImageData(out, 0, 0);
+      }
+      pushHistory({ type: 'image', img: before, alpha: alphaBefore });
+      mctx.clearRect(0, 0, W, H); state.hasMask = false; state.imgVer++;
+      const sec = ((performance.now() - t0) / 1000).toFixed(1);
+      $('timeInfo').textContent = `ลบ ${regions.length} จุด เสร็จใน ${sec} วินาที`;
+      toast('ลบเรียบร้อย ✨ ยังเหลือจุดไหน เลือกแล้วกดซ้ำได้');
+    } catch (err) {
+      console.error(err);
+      ictx.putImageData(before, 0, 0);
+      toast(err && err.message ? err.message : 'ประมวลผลไม่สำเร็จ ลองลดพื้นที่ที่เลือก', true);
+    } finally {
+      state.busy = false; $('busy').classList.add('hidden'); refresh();
+    }
+  }
+
+  /* =========================================================
+     เก็บเฉพาะสิ่งที่เลือก (ลบพื้นหลัง)
+     ใช้พื้นที่ที่เลือกเป็นหน้ากาก → ที่เหลือโปร่งใสหรือทาสีใหม่
+     ========================================================= */
+  function cutout() {
+    if (state.busy || !state.loaded || !state.hasMask) return;
+    const W = imgC.width, H = imgC.height;
+    const before = ictx.getImageData(0, 0, W, H), alphaBefore = maskAlpha();
+    // 1) หน้ากาก (เบลอขอบตามค่าความนุ่ม)
+    const mk = document.createElement('canvas'); mk.width = W; mk.height = H;
+    const mx = mk.getContext('2d');
+    if (state.cutFeather > 0) mx.filter = `blur(${state.cutFeather}px)`;
+    mx.drawImage(maskC, 0, 0);
+    // 2) ภาพ ∩ หน้ากาก
+    const out = document.createElement('canvas'); out.width = W; out.height = H;
+    const ox = out.getContext('2d');
+    ox.drawImage(imgC, 0, 0);
+    ox.globalCompositeOperation = 'destination-in';
+    ox.drawImage(mk, 0, 0);
+    // 3) พื้นหลังใหม่ (ถ้าเลือกสี)
+    ictx.clearRect(0, 0, W, H);
+    const fill = state.cutFill === 'custom' ? $('cutColor').value : state.cutFill;
+    if (fill !== 'none') { ictx.fillStyle = fill; ictx.fillRect(0, 0, W, H); }
+    ictx.drawImage(out, 0, 0);
+    pushHistory({ type: 'image', img: before, alpha: alphaBefore });
+    mctx.clearRect(0, 0, W, H); state.hasMask = false; state.imgVer++;
+    refresh();
+    $('timeInfo').textContent = fill === 'none' ? 'ลบพื้นหลังแล้ว (โปร่งใส)' : 'ลบพื้นหลังแล้ว (ใส่สีใหม่)';
+    toast(fill === 'none' ? '🪄 เก็บเฉพาะที่เลือก — บันทึกเป็น PNG เพื่อคงความโปร่งใส' : '🪄 เปลี่ยนพื้นหลังแล้ว');
+  }
+
+  /* ---------- ดูต้นฉบับ ---------- */
+  let peekData = null;
+  function peek(on) {
+    if (!state.loaded || state.busy || $('peekBtn').disabled) return;
+    if (on && !peekData) { peekData = ictx.getImageData(0, 0, imgC.width, imgC.height); ictx.putImageData(state.original, 0, 0); layers.classList.add('peek'); }
+    if (!on && peekData) { ictx.putImageData(peekData, 0, 0); peekData = null; layers.classList.remove('peek'); }
+  }
+
+  /* ---------- บันทึกไฟล์ ----------
+     - เปิดบน Claude: ใช้ระบบดาวน์โหลดของ Claude (ผู้ใช้กดยืนยัน)
+     - เปิดเป็นไฟล์ในเครื่อง / GitHub Pages: ใช้ลิงก์ดาวน์โหลดปกติ */
+  const inViewer = !!(window.claude && typeof window.claude.use === 'function');
+  let downloads = null;
+  const dlReady = inViewer
+    ? window.claude.use('downloads').then(x => (downloads = x)).catch(() => null)
+    : Promise.resolve(null);
+  function save(type) {
+    const mime = type === 'jpg' ? 'image/jpeg' : 'image/png';
+    const filename = `${state.name}_แก้ไข.${type}`;
+    let src = imgC;
+    if (type === 'jpg') {                       // JPG ไม่มีความโปร่งใส → รองพื้นสีขาวให้
+      src = document.createElement('canvas'); src.width = imgC.width; src.height = imgC.height;
+      const c = src.getContext('2d'); c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, src.width, src.height); c.drawImage(imgC, 0, 0);
+    }
+    src.toBlob(async b => {
+      if (!b) { toast('บันทึกไม่สำเร็จ', true); return; }
+      if (inViewer) {
+        await dlReady;
+        if (!downloads) { toast('หน้านี้บันทึกไฟล์ไม่ได้ — คลิกขวาที่ภาพ แล้วเลือกบันทึกภาพแทน', true); return; }
+        try { await downloads.save({ filename, data: b }); toast('บันทึกแล้ว'); }
+        catch (e) {
+          if (e && e.code === 'declined') toast('ยกเลิกการบันทึก');
+          else if (e && e.code === 'rate_limited') toast('มีหน้าต่างยืนยันเปิดอยู่ — ลองอีกครั้งในอีกสักครู่', true);
+          else toast('บันทึกไม่สำเร็จ (' + ((e && e.code) || 'unknown') + ')', true);
+        }
+        return;
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b); a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }, mime, 0.92);
+  }
+
+  /* =========================================================
+     ผูกปุ่ม
+     ========================================================= */
+  function setTool(t) {
+    state.tool = t;
+    document.querySelectorAll('[data-tool]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tool === t));
+    layers.className = layers.className.replace(/\btool-\w+/g, '').trim() + ' tool-' + t;
+    $('brushOpts').classList.toggle('hidden', !(t === 'brush' || t === 'erase'));
+    $('magicOpts').classList.toggle('hidden', t !== 'magic');
+    $('aiOpts').classList.toggle('hidden', t !== 'ai');
+    $('lassoOpts').classList.toggle('hidden', t !== 'lasso');
+    $('cursor').style.display = 'none';
+  }
+  function setSize(v) {
+    state.size = Math.max(4, Math.min(120, v));
+    $('size').value = state.size; $('sizeOut').textContent = state.size + ' px';
+  }
+  function setMagicSub(v) {
+    state.magicSub = v;
+    $('magicAdd').setAttribute('aria-pressed', !v); $('magicSub').setAttribute('aria-pressed', v);
+  }
+  document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+  $('size').oninput = e => setSize(+e.target.value);
+  $('tol').oninput = e => { state.tol = +e.target.value; $('tolOut').textContent = state.tol; };
+  $('grow').oninput = e => { state.grow = +e.target.value; $('growOut').textContent = state.grow + ' px'; };
+  $('contig').onchange = e => { state.contig = e.target.checked; };
+  $('holes').onchange = e => { state.holes = e.target.checked; };
+  const pair = (a, b, key) => {
+    $(a).onclick = () => { state[key] = false; $(a).setAttribute('aria-pressed', true); $(b).setAttribute('aria-pressed', false); };
+    $(b).onclick = () => { state[key] = true; $(a).setAttribute('aria-pressed', false); $(b).setAttribute('aria-pressed', true); };
+  };
+  pair('lassoAdd', 'lassoSub', 'lassoSub');
+  pair('aiAdd', 'aiSub', 'aiSub');
+  $('aiGrow').oninput = e => { state.aiGrow = +e.target.value; $('aiGrowOut').textContent = state.aiGrow + ' px'; };
+  $('aiLoadBtn').onclick = () => aiLoad();
+  $('aiPoint').onclick = () => setAiBox(false);
+  $('aiBox').onclick = () => setAiBox(true);
+  function setAiBox(v) {
+    state.aiBox = v;
+    $('aiPoint').setAttribute('aria-pressed', !v); $('aiBox').setAttribute('aria-pressed', v);
+    $('aiHint').innerHTML = v
+      ? 'กดค้างแล้วลากกรอบครอบวัตถุ · กด <kbd>Alt</kbd> ค้างขณะลาก = ตัดวัตถุในกรอบออกจากที่เลือกไว้'
+      : 'คลิกที่วัตถุ = เลือกทั้งชิ้น · <kbd>Shift</kbd>+คลิก = เพิ่มส่วนให้ชิ้นล่าสุด · <kbd>Shift</kbd>+<kbd>Alt</kbd>+คลิก = ตัดส่วนเกินของชิ้นล่าสุด';
+  }
+  $('cutBtn').onclick = cutout;
+  $('cutFill').onchange = e => { state.cutFill = e.target.value; $('cutColorWrap').classList.toggle('hidden', e.target.value !== 'custom'); };
+  $('cutColor').oninput = () => { if (state.cutFill === 'custom') state.cutFill = 'custom'; };
+  $('cutFeather').oninput = e => { state.cutFeather = +e.target.value; $('cutFeatherOut').textContent = state.cutFeather + ' px'; };
+  $('magicAdd').onclick = () => setMagicSub(false);
+  $('magicSub').onclick = () => setMagicSub(true);
+  document.querySelectorAll('#qualityGroup button').forEach(b => b.onclick = () => {
+    state.quality = b.dataset.q;
+    document.querySelectorAll('#qualityGroup button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  });
+  $('runBtn').onclick = run;
+  $('undoBtn').onclick = undo;
+  $('clearBtn').onclick = () => {
+    if (!state.hasMask) return;
+    pushMaskHistory(); mctx.clearRect(0, 0, maskC.width, maskC.height); state.hasMask = false; refresh();
+  };
+  $('savePng').onclick = () => save('png');
+  $('saveJpg').onclick = () => save('jpg');
+  $('newBtn').onclick = () => $('file').click();
+  $('demoBtn').onclick = e => { e.stopPropagation(); makeDemo(); };
+  $('file').onchange = e => { loadFile(e.target.files[0]); e.target.value = ''; };
+  $('zoomIn').onclick = () => zoomBy(ZSTEP);
+  $('zoomOut').onclick = () => zoomBy(1 / ZSTEP);
+  $('zoomFit').onclick = zoomFit;
+  $('zoomPct').onclick = () => setZoom(1);
+
+  const peekBtn = $('peekBtn');
+  peekBtn.addEventListener('pointerdown', () => peek(true));
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => peekBtn.addEventListener(ev, () => peek(false)));
+  peekBtn.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); peek(true); } });
+  peekBtn.addEventListener('keyup', () => peek(false));
+
+  const drop = $('drop'), box = $('box');
+  drop.onclick = () => $('file').click();
+  drop.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } };
+  box.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+  box.addEventListener('dragleave', () => drop.classList.remove('over'));
+  box.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); if (!state.busy) loadFile(e.dataTransfer.files[0]); });
+  window.addEventListener('paste', e => {
+    if (state.busy) return;
+    const it = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+    if (it) loadFile(it.getAsFile());
+  });
+
+  window.addEventListener('keydown', e => {
+    if (e.target.matches('input,select,textarea')) return;
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+    if (state.loaded && (e.key === '+' || e.key === '=')) { e.preventDefault(); zoomBy(ZSTEP); return; }
+    if (state.loaded && (e.key === '-' || e.key === '_')) { e.preventDefault(); zoomBy(1 / ZSTEP); return; }
+    if (mod) return;
+    // Space = เลื่อนภาพ เมื่อเมาส์อยู่บนภาพ (แม้โฟกัสอยู่ที่ปุ่ม) หรือโฟกัสไม่ได้อยู่ที่ปุ่ม
+    if (e.key === ' ' && state.loaded && (pointerOverCanvas() || !e.target.matches('button,[role=button]'))) {
+      e.preventDefault();
+      if (!state.spaceHeld) { state.spaceHeld = true; layers.classList.add('tool-hand'); $('cursor').style.display = 'none'; }
+      return;
+    }
+    const k = e.key.toLowerCase();
+    if (k === 'b') setTool('brush');
+    else if (k === 'w') setTool('magic');
+    else if (k === 'a') setTool('ai');
+    else if (k === 'l') setTool('lasso');
+    else if (k === 'e') setTool('erase');
+    else if (k === 'h') setTool('hand');
+    else if (e.key === '[') setSize(state.size - 4);
+    else if (e.key === ']') setSize(state.size + 4);
+    else if (e.key === '0' && state.loaded) zoomFit();
+    else if (e.key === '1' && state.loaded) setZoom(1);
+    else if (e.key === 'Enter' && !$('runBtn').disabled && !e.target.matches('button')) run();
+  });
+  window.addEventListener('keyup', e => {
+    if (e.key === ' ' && state.spaceHeld) {
+      e.preventDefault();   // กันปุ่มที่โฟกัสอยู่ถูกกดตอนปล่อย Space
+      state.spaceHeld = false;
+      if (state.tool !== 'hand') layers.classList.remove('tool-hand');
+    }
+  });
+
+  refresh();
+  window.__eraserTest = { makeDemo, state: () => ({ zoom: state.zoom, hist: state.history.map(h => h.type), hasMask: state.hasMask, ai: AI.status, imgVer: state.imgVer, embVer: AI.embVer, boxNative: AI.boxNative }) };
+
+  /* =========================================================
+     โหมดฝังใน DocDesk (eraser.html?embed=1)
+     - รับรูปจาก DocDesk (รองรับ HEIC/TIFF ผ่านตัวแปลงของ DocDesk)
+     - ใช้ธีม/สกินสีเดียวกับ DocDesk และแจ้งความสูงให้กรอบพอดีเนื้อหา
+     ========================================================= */
+  if (EMBED) {
+    document.body.classList.add('embed');
+    const okOrigin = o => o === location.origin || (location.protocol === 'file:' && o === 'null');
+    const toParent = msg => { try { parent.postMessage({ src: 'docdesk-eraser', ...msg }, location.protocol === 'file:' ? '*' : location.origin); } catch (e) {} };
+    // ธีม: อ่านสีจาก DocDesk แล้วตั้งค่าให้ตรงกัน
+    function syncTheme() {
+      try {
+        const pd = parent.document.documentElement, cs = parent.getComputedStyle(pd), me = document.documentElement.style;
+        const v = n => cs.getPropertyValue(n).trim();
+        const dark = pd.getAttribute('data-theme') === 'dark';
+        me.setProperty('--bg', 'transparent');
+        me.setProperty('--panel', v('--paper') || '#fff');
+        me.setProperty('--ink', v('--ink')); me.setProperty('--muted', v('--muted')); me.setProperty('--line', v('--line'));
+        me.setProperty('--accent', v('--brand')); me.setProperty('--accent-ink', dark ? '#0B0B10' : '#FFFFFF');
+        me.setProperty('--checker-a', v('--surface'));
+        me.setProperty('--checker-b', `color-mix(in srgb, ${v('--line')} 70%, ${v('--surface')})`);
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      } catch (e) { /* เปิดแบบไฟล์ในเครื่อง อ่านธีมไม่ได้ ใช้ธีมของตัวเอง */ }
+    }
+    syncTheme();
+    try {
+      new MutationObserver(() => requestAnimationFrame(syncTheme))
+        .observe(parent.document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-skin'] });
+    } catch (e) {}
+    // เลือกรูป: ให้ DocDesk เปิดหน้าต่างเลือกไฟล์ (รองรับฟอร์แมตมากกว่า)
+    const drop = $('drop');
+    drop.querySelector('strong').textContent = 'เลือกรูปจากช่องด้านบน';
+    drop.querySelector('small').textContent = 'รองรับ JPG · PNG · WebP · HEIC · TIFF · AVIF — หรือแตะตรงนี้เพื่อเลือกไฟล์';
+    drop.onclick = () => toParent({ type: 'pick' });
+    $('newBtn').onclick = () => toParent({ type: 'pick' });
+    window.addEventListener('message', e => {
+      if (!okOrigin(e.origin) || !e.data || e.data.dst !== 'docdesk-eraser') return;
+      const d = e.data;
+      if (d.type === 'image' && d.blob) {
+        if (state.busy) { toast('รอให้ลบวัตถุเสร็จก่อน แล้วค่อยเปลี่ยนภาพ', true); return; }
+        loadImageSource(URL.createObjectURL(d.blob), d.name || 'image');
+      }
+      if (d.type === 'viewport' && d.h) {
+        document.documentElement.style.setProperty('--boxh', Math.round(Math.min(720, Math.max(320, d.h * 0.62))) + 'px');
+      }
+    });
+    // แจ้งความสูงจริงให้ DocDesk ปรับกรอบ
+    let lastH = 0;
+    new ResizeObserver(() => {
+      const h = Math.ceil(document.documentElement.scrollHeight);
+      if (Math.abs(h - lastH) > 2) { lastH = h; toParent({ type: 'height', h }); }
+    }).observe(document.body);
+    toParent({ type: 'ready' });
+  }
+})();
+</script>
+</body>
+</html>

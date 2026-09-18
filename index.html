@@ -26,7 +26,7 @@
   --brand:#4B31E0; --brand-soft:#EDE9FF; --logo-acc:#00B8D4;
   --c-merge:#4B31E0; --c-split:#E0553D; --c-pages:#0F9B6C; --c-img:#D98A00;
   --c-render:#1585DE; --c-mark:#8B46D9; --c-num:#D63A6A; --c-conv:#0E8C93; --c-bg:#5E7C16; --c-zip:#B0430E; --c-lock:#2F4B9B; --c-crop:#8A6A00; --c-text:#0C6E5B; --c-edit:#7A2FBF;
-  --c-x2xl:#1D7A46; --c-x2wd:#1B4F9C; --c-shrink:#C2410C;
+  --c-x2xl:#1D7A46; --c-x2wd:#1B4F9C; --c-shrink:#C2410C; --c-erase:#A1339B;
   --ok:#0F9B6C; --err:#D64545;
   --shadow:0 1px 2px rgba(22,19,31,.06),0 8px 24px -12px rgba(22,19,31,.18);
   --r:14px;
@@ -36,7 +36,7 @@
   --brand:#9583FF; --brand-soft:#282141; --logo-acc:#3BC3CA;
   --c-merge:#9583FF; --c-split:#FF8A72; --c-pages:#3FCB99; --c-img:#F0B429;
   --c-render:#54B0F5; --c-mark:#BE8CF0; --c-num:#FF7BA3; --c-conv:#3BC3CA; --c-bg:#A8CF3C; --c-zip:#FF9364; --c-lock:#7E9BFF; --c-crop:#E5C044; --c-text:#3ED0AC; --c-edit:#C08BFF;
-  --c-x2xl:#4ED88A; --c-x2wd:#7FB0FF; --c-shrink:#FF9A5C;
+  --c-x2xl:#4ED88A; --c-x2wd:#7FB0FF; --c-shrink:#FF9A5C; --c-erase:#EE8CE6;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
 }
 *{box-sizing:border-box}
@@ -135,6 +135,7 @@ header{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:
 .files .th{flex:0 0 auto;width:40px;height:40px;border-radius:8px;overflow:hidden;background:var(--paper);
   border:1px solid var(--line);display:grid;place-items:center;font-size:9px;font-weight:700;color:var(--muted)}
 .files .th img{width:100%;height:100%;object-fit:cover;display:block}
+.eraser-frame{display:block;width:100%;height:640px;border:0;margin-top:14px;background:transparent;color-scheme:normal}
 .pv{display:flex;gap:14px;align-items:center;margin-top:14px;padding:12px;background:var(--surface);
   border:1px solid var(--line);border-radius:var(--r)}
 .pv .pvim{flex:0 0 auto;width:104px;height:126px;border-radius:10px;overflow:hidden;background:var(--paper);
@@ -766,6 +767,7 @@ const ICON={
   edit:DS+'<path class="fl" d="M8 4.6h3.6v2.2H8z"/><path d="M8.4 12.4h4.2M8.4 15.4h2.8"/><path d="m19.8 12.6 1.8 1.8-5.8 5.8-2.3.5.5-2.3z"/>',
   x2xl:DS+'<path class="fl" d="M7.8 12.2h8.4v7H7.8z"/><path d="M7.8 12.2h8.4v7H7.8z"/><path d="M7.8 15.7h8.4M12 12.2v7"/>',
   x2wd:DS+'<path class="fl" d="M7.8 12.2h8.4v7H7.8z"/><path d="M7.8 12.2h8.4v7H7.8z"/><path d="m9.4 14 1.3 3.6 1.3-2.4 1.3 2.4L14.6 14"/>',
+  erase:'<path class="fl" d="M2.8 4.6h12v9.2h-12z"/><path d="M2.8 4.6h12v9.2h-12z"/><path d="m2.8 12 3.4-3 2.4 2 1.8-1.4"/><circle cx="11.2" cy="7.6" r="1"/><path class="fl" d="m15.6 11.4 4.8 4.8-4 4H13l-1.8-1.8z"/><path d="m15.6 11.4 4.8 4.8-4 4H13l-1.8-1.8z"/><path d="m13.2 13.8 4.8 4.8"/><path d="M16.4 20.2h4.8"/>',
   shrink:'<path class="fl" d="M8.8 8.8h6.4v6.4H8.8z"/><path d="M8.8 8.8h6.4v6.4H8.8z"/><path d="M3.4 8V3.4h4.6"/><path d="m3.4 3.4 4.2 4.2"/><path d="M20.6 16v4.6H16"/><path d="m20.6 20.6-4.2-4.2"/>'
 };
 const TOOLS=[
@@ -778,6 +780,7 @@ const TOOLS=[
  {id:"num", g:"pdf",    c:"--c-num",   ic:"num",   t:"ใส่เลขหน้า",    s:"เลือกรูปแบบ ตำแหน่ง และข้ามหน้าปกได้",     d:"เช่น 1 · 1/10 · หน้า 1 จาก 10 วางได้ 3 ตำแหน่ง"},
  {id:"conv", g:"img",   c:"--c-conv",  ic:"conv",  t:"แปลงรูปภาพ",    s:"HEIC/TIFF/AVIF ↔ JPG · ย่อขนาด · บีบอัด ทีละหลายไฟล์",d:"แปลงฟอร์แมต ย่อขนาด และลดขนาดไฟล์ พร้อมกันหลายรูป"},
  {id:"bg", g:"img",     c:"--c-bg",    ic:"bg",    t:"ลบพื้นหลัง",    s:"ทำพื้นหลังโปร่งใส หรือเปลี่ยนเป็นสีใหม่",  d:"เห็นผลทันทีขณะปรับค่า แล้วบันทึกเป็น PNG โปร่งใสหรือใส่พื้นหลังใหม่"},
+ {id:"erase", g:"img",  c:"--c-erase", ic:"erase", t:"ลบวัตถุในภาพ",  s:"ลบคน สิ่งของ ลายน้ำ ด้วย AI · Magic · Lasso",d:"เลือกสิ่งที่ไม่ต้องการ แล้วระบบเติมพื้นที่ให้กลมกลืนกับภาพ — ประมวลผลในเครื่อง ไม่อัปโหลดรูป"},
  {id:"zip", g:"pdf",    c:"--c-zip",   ic:"zip",   t:"บีบอัด PDF",    s:"ลดขนาดไฟล์ให้ส่งอีเมลได้ เลือกได้ 3 ระดับ",d:"ลดขนาดไฟล์สแกน บอกขนาดก่อน–หลังให้ดูก่อนบันทึก"},
  {id:"lock", g:"pdf",   c:"--c-lock",  ic:"lock",  t:"รหัสผ่าน",      s:"ใส่รหัสล็อกไฟล์ หรือปลดรหัสที่มีอยู่",    d:"เข้ารหัส AES-256 กำหนดสิทธิ์พิมพ์/คัดลอกได้ และปลดรหัสเมื่อรู้รหัสเดิม"},
  {id:"crop", g:"pdf",   c:"--c-crop",  ic:"crop",  t:"ครอบตัดหน้า",   s:"ลากกรอบเลือกพื้นที่เองได้ เห็นผลทันที",d:"ลากกรอบบนภาพตัวอย่างเพื่อเลือกพื้นที่ที่จะเก็บไว้"},
@@ -797,7 +800,7 @@ const CATS=[
    ic:'<path d="M6.2 2.8h6.6L18.2 8.2v12.1a.9.9 0 0 1-.9.9H6.2a.9.9 0 0 1-.9-.9V3.7a.9.9 0 0 1 .9-.9z"/><path d="M12.8 2.8v5.4h5.4"/>'},
   {g:"conv",t:"แปลงไฟล์",    c:"--c-x2xl", s:"PDF กับ Excel Word รูปภาพ ข้อความ",
    ic:'<path d="M20.4 10.4a8.4 8.4 0 0 1-12.6 7"/><path d="M3.6 13.6a8.4 8.4 0 0 1 12.6-7"/><path d="m20.6 6.6.2 3.9-3.9.2"/><path d="m3.4 17.4-.2-3.9 3.9-.2"/>'},
-  {g:"img", t:"รูปภาพ",      c:"--c-conv", s:"แปลงนามสกุล ย่อขนาด ลบพื้นหลัง",
+  {g:"img", t:"รูปภาพ",      c:"--c-conv", s:"แปลงนามสกุล ย่อขนาด ลบพื้นหลัง ลบวัตถุ",
    ic:'<path d="M3.4 5.2h17.2v13.6H3.4z"/><circle cx="8.4" cy="10" r="1.6"/><path d="m3.4 16.4 5-4.4 3.8 3.2 3-2.4 5.4 4.2"/>'}
 ];
 
@@ -1371,6 +1374,13 @@ BUILD.bg=function(body){
       box.style.display="";
     });
   }
+
+  /* ทางลัดไปโหมด AI เมื่อพื้นหลังไม่ได้มีสีเดียว */
+  const tip=el("div","note on");tip.style.marginTop="14px";
+  tip.innerHTML='💡 พื้นหลังหลายสี เช่น รูปถ่ายในสถานที่จริง? ใช้ <b>ลบวัตถุในภาพ</b> โหมด 🤖 AI คลิกที่ตัวคน แล้วกด “ลบพื้นหลัง (เก็บที่เลือกไว้)” ';
+  const go=el("button","mini","ไปที่เครื่องมือ →");go.style.marginLeft="6px";
+  go.onclick=()=>{const t=TOOLS.find(x=>x.id==="erase");if(t)open(t);};
+  tip.appendChild(go);body.appendChild(tip);
 
   const ui=actionBar(body,"บันทึกภาพ",async(u)=>{
     const s=settings();
@@ -2230,6 +2240,46 @@ BUILD.shrink=function(body){
 
 
 
+/* ---------- 18) ลบวัตถุในภาพ ----------
+   ตัวเครื่องมืออยู่ในไฟล์ eraser.html (ต้องวางไว้โฟลเดอร์เดียวกับ index.html)
+   หน้านี้ทำหน้าที่เปิดรูป (รองรับ HEIC/TIFF ด้วยตัวแปลงของ DocDesk) แล้วส่งให้กรอบด้านล่าง */
+let eraserMsg=null,eraserResize=null;
+BUILD.erase=function(body){
+  const frame=el("iframe","eraser-frame");
+  frame.title="เครื่องมือลบวัตถุในภาพ";
+  frame.src="eraser.html?embed=1";
+  let ready=false, pending=null;
+  const target=location.protocol==="file:"?"*":location.origin;
+  const send=m=>{try{frame.contentWindow.postMessage(Object.assign({dst:"docdesk-eraser"},m),target);}catch(e){}};
+  const sendViewport=()=>send({type:"viewport",h:window.innerHeight});
+  const dz=dropzone(body,IMG_ACCEPT,false,async fs=>{
+    note.className="note";
+    try{
+      const c=await fileToCanvas(fs[0]);
+      const blob=await rawBlob(c,"png");
+      const msg={type:"image",blob:blob,name:fs[0].name};
+      if(ready)send(msg);else pending=msg;
+      frame.scrollIntoView({behavior:"smooth",block:"start"});
+    }catch(e){note.className="note err on";note.textContent="⚠️ "+(e.message||"เปิดรูปไม่ได้");}
+  },true);
+  const note=el("div","note");body.appendChild(note);
+  body.appendChild(frame);
+  /* รับข้อความจากกรอบ: พร้อมใช้งาน / ความสูง / ขอเลือกไฟล์ */
+  if(eraserMsg)window.removeEventListener("message",eraserMsg);
+  eraserMsg=ev=>{
+    if(!frame.isConnected){window.removeEventListener("message",eraserMsg);eraserMsg=null;return;}
+    if(ev.source!==frame.contentWindow)return;
+    const d=ev.data||{};
+    if(d.src!=="docdesk-eraser")return;
+    if(d.type==="ready"){ready=true;sendViewport();if(pending){send(pending);pending=null;}}
+    if(d.type==="height"&&d.h)frame.style.height=Math.max(420,Math.ceil(d.h))+"px";
+    if(d.type==="pick"){const inp=dz.nextElementSibling;if(inp&&inp.type==="file")inp.click();}
+  };
+  window.addEventListener("message",eraserMsg);
+  if(eraserResize)window.removeEventListener("resize",eraserResize);
+  eraserResize=()=>{if(frame.isConnected&&ready)sendViewport();};
+  window.addEventListener("resize",eraserResize);
+};
 
 })();
 </script>

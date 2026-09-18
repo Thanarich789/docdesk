@@ -9,6 +9,9 @@ DocDesk ดึงไลบรารีต่อไปนี้จาก CDN ต�
 | [JSZip](https://github.com/Stuk/jszip) | สร้างไฟล์ ZIP และ XLSX | MIT หรือ GPLv3 |
 | [heic2any](https://github.com/alexcorvi/heic2any) | อ่านไฟล์ HEIC จาก iPhone | MIT |
 | [UTIF.js](https://github.com/photopea/UTIF.js) | อ่านและเขียนไฟล์ TIFF | MIT |
+| [Transformers.js](https://github.com/huggingface/transformers.js) | รันโมเดล AI ในเบราว์เซอร์ (เครื่องมือลบวัตถุ) | Apache-2.0 |
+| [ONNX Runtime Web](https://github.com/microsoft/onnxruntime) | ตัวประมวลผลโมเดล AI | MIT |
+| [SlimSAM](https://github.com/czg1225/SlimSAM) ([Xenova/slimsam-77-uniform](https://huggingface.co/Xenova/slimsam-77-uniform)) | โมเดล AI เลือกวัตถุตามรูปร่าง ดาวน์โหลดจาก Hugging Face เมื่อผู้ใช้กดเปิดใช้ | Apache-2.0 |
 
 ฟอนต์ **Chakra Petch** และ **IBM Plex Sans Thai** อยู่ภายใต้ SIL Open Font License 1.1
 (ฝังมาในไฟล์เพื่อให้แสดงผลภาษาไทยได้ถูกต้องแม้ไม่มีอินเทอร์เน็ต)

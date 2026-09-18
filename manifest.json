@@ -2,7 +2,7 @@
   "id": "./",
   "name": "DocDesk — โต๊ะทำงานเอกสาร",
   "short_name": "DocDesk",
-  "description": "เครื่องมือจัดการ PDF Excel Word และรูปภาพ 17 รายการ ทำงานในเครื่องคุณเอง ไฟล์ไม่ออกจากเครื่อง",
+  "description": "เครื่องมือจัดการ PDF Excel Word และรูปภาพ 18 รายการ ทำงานในเครื่องคุณเอง ไฟล์ไม่ออกจากเครื่อง",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
