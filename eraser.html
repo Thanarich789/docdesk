@@ -155,6 +155,22 @@ details.guide li{margin:4px 0}
 details.guide table{border-collapse:collapse;font-size:.85rem;margin-top:8px}
 details.guide td{padding:3px 10px 3px 0;vertical-align:top}
 kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:.78rem;font-family:inherit}
+/* ===== กล่องวิธีใช้ข้างจอ ===== */
+.help{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:12px 14px;
+  background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
+.help header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0}
+.help h2{margin:0;font-size:.95rem;font-weight:600}
+.help .toggle{border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:.82rem;padding:2px 4px;border-radius:6px}
+.help .toggle:hover{color:var(--ink)}
+.help .body{margin-top:8px;font-size:.86rem;line-height:1.6}
+.help.collapsed .body{display:none}
+.help .now{font-weight:600;color:var(--accent);display:block;margin-bottom:4px}
+.help ol{margin:0;padding-left:1.15em}
+.help ol li{margin:3px 0}
+.help ol li b{font-weight:600}
+.help .tip{margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--line);color:var(--muted);font-size:.8rem}
+.help kbd{font-size:.75rem}
+
 /* ===== โหมดฝังใน DocDesk ===== */
 body.embed{background:transparent}
 body.embed .wrap{padding:0;max-width:none}
@@ -214,6 +230,18 @@ body.embed .panel{position:static}
     </section>
 
     <aside class="panel" aria-label="เครื่องมือ">
+      <section class="help" id="helpBox" aria-label="วิธีใช้">
+        <header>
+          <h2>📖 วิธีใช้</h2>
+          <button type="button" class="toggle" id="helpToggle" aria-expanded="true">ซ่อน</button>
+        </header>
+        <div class="body" id="helpBody">
+          <span class="now" id="helpNow"></span>
+          <ol id="helpSteps"></ol>
+          <p class="tip" id="helpTip"></p>
+        </div>
+      </section>
+
       <div class="group">
         <h2>เครื่องมือเลือกพื้นที่</h2>
         <div class="seg six" role="group">
@@ -243,6 +271,7 @@ body.embed .panel{position:static}
           <div class="ai-status" id="aiStatus"><span class="dot"></span><span id="aiText">ยังไม่ได้เปิดใช้ AI</span></div>
           <div class="ai-bar hidden" id="aiBar"><i></i></div>
           <button type="button" class="btn" id="aiLoadBtn">⚡ เปิดใช้ AI</button>
+          <button type="button" class="btn hidden" id="aiCancelBtn">✕ ยกเลิก</button>
           <p class="hint" style="margin:0" id="aiNote">ครั้งแรกต้องดาวน์โหลดโมเดลประมาณ 30–40 MB (ครั้งต่อไปเบราว์เซอร์จำไว้) · ประมวลผลในเครื่อง ไม่ส่งภาพออกไป</p>
           <div>
             <label class="lbl">วิธีชี้วัตถุ</label>
@@ -704,6 +733,59 @@ body.embed .panel{position:static}
     return { hex: c, r: n >> 16, g: (n >> 8) & 255, b: n & 255 };
   };
 
+  /* =========================================================
+     กล่องวิธีใช้ข้างจอ — เปลี่ยนตามเครื่องมือที่เลือก
+     ========================================================= */
+  const HELP = {
+    brush: { now: '🖌️ ระบาย — ทาเองด้วยแปรง',
+      steps: ['เลื่อนแถบ <b>ขนาดหัวแปรง</b> ให้พอดีวัตถุ (หรือกด <kbd>[</kbd> <kbd>]</kbd>)',
+              'กดค้างแล้วลากทับสิ่งที่ไม่ต้องการ ให้เลยขอบวัตถุเล็กน้อย',
+              'ทาเกินใช้ <b>🩹 ลบรอย</b> (<kbd>E</kbd>) ลบรอยออก',
+              'กด <b>✨ ลบวัตถุ</b> ด้านล่าง'],
+      tip: 'เหมาะกับรอยเล็กๆ สายไฟ จุดเปื้อน หรือเก็บงานจุดที่เครื่องมืออื่นทำไม่ครบ' },
+    magic: { now: '🪄 Magic — คลิกเลือกตามสี',
+      steps: ['คลิกที่วัตถุ 1 ครั้ง ระบบเลือกพื้นที่สีใกล้เคียงให้',
+              'เลือกได้น้อย/มากเกิน → ปรับ <b>ความไวสี</b> แล้วคลิกใหม่',
+              'ยังเห็นขอบเหลือหลังลบ → เพิ่ม <b>ขยายขอบที่เลือก</b>',
+              'กด <b>✨ ลบวัตถุ</b>'],
+      tip: 'ลายน้ำหรือตัวอักษรกระจายหลายจุด: ปิด “เฉพาะส่วนที่ติดกัน” แล้วคลิกครั้งเดียวได้ทั้งภาพ' },
+    lasso: { now: '➰ Lasso — วาดเส้นล้อมรอบ',
+      steps: ['กดค้างแล้วลากเส้นล้อมรอบวัตถุ',
+              'ปล่อยนิ้ว/เมาส์ ระบบลากเส้นปิดวงให้เอง',
+              'เลือกเกิน → กด <kbd>Alt</kbd> ค้างแล้วลากล้อมส่วนที่จะตัดออก',
+              'กด <b>✨ ลบวัตถุ</b>'],
+      tip: 'เหมาะกับวัตถุที่สีกลืนกับพื้นหลัง หรืออยากกำหนดขอบเขตเองแบบอิสระ' },
+    ai: { now: '🤖 AI — ให้ AI หาขอบวัตถุ',
+      steps: ['กด <b>⚡ เปิดใช้ AI</b> ครั้งแรกต้องรอโหลดโมเดล (ดูตัวเลขวินาทีเดินอยู่)',
+              'เลือกวิธีชี้: <b>คลิกจุด</b> ที่กลางวัตถุ หรือ <b>ลากกรอบ</b> ครอบวัตถุ',
+              'ยังไม่ครบ → <kbd>Shift</kbd>+คลิกเพิ่มส่วน · เกิน → <kbd>Shift</kbd>+<kbd>Alt</kbd>+คลิก',
+              'กด <b>✨ ลบวัตถุ</b> หรือ <b>🪄 ลบพื้นหลัง</b> ถ้าอยากเก็บสิ่งที่เลือกไว้'],
+      tip: 'ระหว่าง AI คิด ยังเลื่อนและซูมภาพได้ ถ้าช้าเกินกดปุ่ม ✕ ยกเลิกได้' },
+    erase: { now: '🩹 ลบรอย — ลบสิ่งที่ระบายไว้',
+      steps: ['ลากทับรอยสีชมพูที่เลือกเกิน เพื่อเอาออกจากพื้นที่ที่เลือก',
+              'ปรับ <b>ขนาดหัวแปรง</b> ให้เหมาะกับจุดที่จะเก็บ',
+              'เสร็จแล้วกลับไป <b>🖌️ ระบาย</b> (<kbd>B</kbd>) เพื่อเลือกต่อ'],
+      tip: 'อยากล้างที่เลือกทั้งหมด กด <b>ล้างที่เลือก</b> ทีเดียวเร็วกว่า' },
+    hand: { now: '✋ เลื่อน — ดูส่วนอื่นของภาพ',
+      steps: ['ใช้ปุ่ม <b>−</b> <b>+</b> มุมขวาล่างซูมเข้า-ออก',
+              'กดค้างแล้วลากเพื่อเลื่อนดูส่วนอื่นของภาพ',
+              'กด <b>⤢ พอดีจอ</b> เพื่อกลับมาเห็นภาพทั้งใบ'],
+      tip: 'บนคอมไม่ต้องสลับเครื่องมือ กด <kbd>Space</kbd> ค้างแล้วลากได้เลย · <kbd>Ctrl</kbd>+ล้อเมาส์ = ซูม' },
+  };
+  function drawHelp() {
+    const h = HELP[state.tool] || HELP.brush;
+    $('helpNow').textContent = h.now;
+    $('helpSteps').innerHTML = h.steps.map(t => '<li>' + t + '</li>').join('');
+    $('helpTip').innerHTML = '💡 ' + h.tip;
+  }
+  const HELP_KEY = 'eraser_help_open';
+  function setHelpOpen(open) {
+    $('helpBox').classList.toggle('collapsed', !open);
+    $('helpToggle').textContent = open ? 'ซ่อน' : 'แสดง';
+    $('helpToggle').setAttribute('aria-expanded', open);
+    try { localStorage.setItem(HELP_KEY, open ? '1' : '0'); } catch (e) {}
+  }
+
   /* ---------- อัปเดตสถานะปุ่ม ---------- */
   function refresh() {
     const L = state.loaded, B = state.busy;
@@ -1033,48 +1115,178 @@ body.embed .panel{position:static}
      - โหลดไลบรารี + โมเดลครั้งแรกเมื่อผู้ใช้กดเปิดใช้เท่านั้น
      - วิเคราะห์ภาพ (encoder) ครั้งเดียวต่อภาพ · คลิกแต่ละครั้งใช้แค่ decoder (เร็ว)
      ========================================================= */
-  const AI_LIB = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.0/dist/transformers.min.js';
+  // ตั้ง window.__AI_LIB / window.__AI_HOST ไว้ล่วงหน้าได้ ถ้าต้องการโฮสต์ไลบรารีและโมเดลเอง
+  const AI_LIB = (typeof window !== 'undefined' && window.__AI_LIB) ||
+    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.0/dist/transformers.min.js';
   const AI_MODEL = 'Xenova/slimsam-77-uniform';
-  const AI = { status: 'idle', T: null, model: null, proc: null, emb: null, embVer: -1, info: null, busy: false, last: null, files: {} };
+  const AI_HOST = (typeof window !== 'undefined' && window.__AI_HOST) || null;   // ใช้เมื่อโฮสต์โมเดลเอง
+  const AI = {
+    status: 'idle', T: null, model: null, proc: null, emb: null, embVer: -1, info: null,
+    busy: false, last: null, files: {}, worker: null, mode: null, jobs: new Map(), jobId: 0, t0: 0, timer: 0,
+  };
+
+  /* โค้ดที่รันใน Web Worker — ให้ AI ทำงานเบื้องหลัง หน้าจอจึงไม่ค้าง */
+  function aiWorkerSource() {
+    return `
+let T, model, proc, emb = null, info = null;
+async function setup(m) {
+  T = await import(m.lib);
+  T.env.allowLocalModels = false;
+  if (m.host) { T.env.remoteHost = m.host; T.env.remotePathTemplate = '{model}/resolve/{revision}/'; }
+  try { if (!self.crossOriginIsolated) T.env.backends.onnx.wasm.numThreads = 1; } catch (e) {}
+  try { if (m.wasmPaths) T.env.backends.onnx.wasm.wasmPaths = m.wasmPaths; } catch (e) {}
+  const progress_callback = p => self.postMessage({ type: 'progress', p });
+  model = await T.SamModel.from_pretrained(m.model, { dtype: 'q8', device: 'wasm', progress_callback });
+  proc = await T.AutoProcessor.from_pretrained(m.model, { progress_callback });
+  const names = (model.sessions && model.sessions.prompt_encoder_mask_decoder && model.sessions.prompt_encoder_mask_decoder.inputNames) || [];
+  self.postMessage({ type: 'ready', boxNative: names.indexOf('input_boxes') >= 0 });
+}
+self.onmessage = async e => {
+  const m = e.data;
+  try {
+    if (m.type === 'load') return await setup(m);
+    if (m.type === 'embed') {
+      const raw = new T.RawImage(m.data, m.w, m.h, 3);
+      const inputs = await proc(raw);
+      emb = await model.get_image_embeddings(inputs);
+      info = { orig: inputs.original_sizes, resh: inputs.reshaped_input_sizes };
+      return self.postMessage({ type: 'done', id: m.id });
+    }
+    if (m.type === 'segment') {
+      const input_points = proc.reshape_input_points([m.pts], info.orig, info.resh);
+      const input_labels = proc.image_processor.add_input_labels([m.labels], input_points);
+      const feed = Object.assign({}, emb, { input_points, input_labels });
+      if (m.box) feed.input_boxes = proc.reshape_input_points([[m.box]], info.orig, info.resh, true);
+      const out = await model(feed);
+      const masks = await proc.post_process_masks(out.pred_masks, info.orig, info.resh);
+      const t = masks[0], d = t.dims, mh = d[d.length - 2], mw = d[d.length - 1];
+      const sc = out.iou_scores.data;
+      let best = 0; for (let i = 1; i < sc.length; i++) if (sc[i] > sc[best]) best = i;
+      const plane = new Uint8Array(t.data.subarray(best * mh * mw, (best + 1) * mh * mw));
+      return self.postMessage({ type: 'done', id: m.id, plane, mw, mh }, [plane.buffer]);
+    }
+  } catch (err) {
+    self.postMessage({ type: 'error', id: m.id, message: String((err && err.message) || err) });
+  }
+};`;
+  }
+  // ส่งงานให้ worker แล้วรอผล
+  function aiAsk(msg, transfer, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const id = ++AI.jobId;
+      const timer = setTimeout(() => {
+        if (AI.jobs.delete(id)) reject(new Error('AI ใช้เวลานานผิดปกติ — ลองกดยกเลิกแล้วเปิดใช้ AI ใหม่'));
+      }, timeoutMs || (typeof window !== 'undefined' && window.__AI_TIMEOUT) || 180000);
+      AI.jobs.set(id, {
+        resolve: v => { clearTimeout(timer); resolve(v); },
+        reject: e => { clearTimeout(timer); reject(e); },
+      });
+      AI.worker.postMessage({ ...msg, id }, transfer || []);
+    });
+  }
   function aiSetStatus(kind, text, pct) {
     AI.status = kind;
-    const st = $('aiStatus'); st.className = 'ai-status ' + kind; $('aiText').textContent = text;
+    const st = $('aiStatus'); st.className = 'ai-status ' + kind;
+    AI.baseText = text;
+    $('aiText').textContent = text;
+    // จับเวลาให้เห็นว่ายังทำงานอยู่ ไม่ได้ค้าง
+    clearInterval(AI.timer); AI.timer = 0;
+    if (kind === 'loading' || kind === 'working') {
+      AI.t0 = Date.now();
+      AI.timer = setInterval(() => {
+        const sec = Math.round((Date.now() - AI.t0) / 1000);
+        $('aiText').textContent = AI.baseText + ` · ${sec} วิ` +
+          (sec > 40 ? ' (เครื่องกำลังคิดอยู่ ยังไม่ค้างนะคะ)' : '');
+      }, 1000);
+    }
+    $('aiCancelBtn').classList.toggle('hidden', !(kind === 'loading' || kind === 'working'));
     const bar = $('aiBar');
     bar.classList.toggle('hidden', pct == null);
     if (pct != null) bar.firstElementChild.style.width = Math.round(pct * 100) + '%';
     $('aiLoadBtn').classList.toggle('hidden', kind === 'ready' || kind === 'working' || kind === 'loading');
+    if (kind === 'idle') $('aiLoadBtn').classList.remove('hidden');
     $('aiLoadBtn').textContent = kind === 'error' ? '↻ ลองเปิดใช้ AI อีกครั้ง' : '⚡ เปิดใช้ AI';
     layers.classList.toggle('ai-busy', kind === 'working' || kind === 'loading');
   }
   const mb = n => (n / 1048576).toFixed(1);
+  function aiProgress(e) {
+    if (e.status !== 'progress' || !e.total) return;
+    AI.files[e.file] = { l: e.loaded, t: e.total };
+    let l = 0, t = 0; for (const k in AI.files) { l += AI.files[k].l; t += AI.files[k].t; }
+    aiSetStatus('loading', `กำลังดาวน์โหลดโมเดล ${mb(l)} / ${mb(t)} MB`, 0.05 + 0.9 * (l / t));
+  }
+  // โหลดใน Worker ก่อน (หน้าจอไม่ค้าง) ถ้าเบราว์เซอร์ไม่รองรับค่อยโหลดบนเธรดหลัก
+  async function aiLoadWorker() {
+    if (typeof Worker === 'undefined') return false;
+    const url = URL.createObjectURL(new Blob([aiWorkerSource()], { type: 'text/javascript' }));
+    let w;
+    try { w = new Worker(url, { type: 'module' }); } catch (e) { URL.revokeObjectURL(url); return false; }
+    AI.worker = w;
+    return await new Promise(resolve => {
+      let settled = false;
+      const finish = ok => { if (!settled) { settled = true; URL.revokeObjectURL(url); resolve(ok); } };
+      w.onerror = ev => {
+        AI.lastWorkerError = (ev && ev.message) || 'worker error';
+        try { w.terminate(); } catch (e) {}
+        AI.worker = null;
+        AI.jobs.forEach(j => j.reject(new Error('AI หยุดทำงานกลางคัน'))); AI.jobs.clear();
+        if (AI.mode === 'worker') { AI.mode = null; aiSetStatus('error', 'AI หยุดทำงานกลางคัน — กดเปิดใช้ AI ใหม่อีกครั้ง'); }
+        finish(false);
+      };
+      w.onmessage = ev => {
+        const d = ev.data || {};
+        if (d.type === 'progress') return aiProgress(d.p);
+        if (d.type === 'ready') { AI.boxNative = d.boxNative; AI.mode = 'worker'; return finish(true); }
+        if (d.type === 'done' || d.type === 'error') {
+          const job = d.id != null ? AI.jobs.get(d.id) : null;
+          if (job) {
+            AI.jobs.delete(d.id);
+            d.type === 'error' ? job.reject(new Error(d.message)) : job.resolve(d);
+          } else if (d.type === 'error') {
+            // พลาดตั้งแต่ตอนโหลด (ยังไม่มีเลขงาน) → เลิกใช้ worker แล้วไปโหมดสำรอง
+            console.error('AI worker:', d.message);
+            AI.lastWorkerError = d.message;
+            try { w.terminate(); } catch (e) {}
+            AI.worker = null;
+            AI.jobs.forEach(j => j.reject(new Error(d.message))); AI.jobs.clear();
+            finish(false);
+          }
+          return;
+        }
+      };
+      w.postMessage({ type: 'load', lib: AI_LIB, model: AI_MODEL, host: AI_HOST,
+                      wasmPaths: AI_HOST ? AI_HOST.replace(/hf\/$/, 'ort/') : null });
+      setTimeout(() => { if (!settled) { try { w.terminate(); } catch (e) {} AI.worker = null; finish(false); } }, 180000);
+    });
+  }
   async function aiLoad() {
-    if (AI.model || AI.status === 'loading') return !!AI.model;
-    aiSetStatus('loading', 'กำลังโหลดไลบรารี AI…', 0.02);
+    if (AI.mode || AI.status === 'loading') return !!AI.mode;
+    AI.files = {};
+    aiSetStatus('loading', 'กำลังโหลด AI…', 0.02);
     try {
+      if (await aiLoadWorker()) { aiSetStatus('ready', 'AI พร้อมใช้งาน — คลิกที่วัตถุในภาพได้เลย'); return true; }
+      // สำรอง: โหลดบนเธรดหลัก (หน้าจออาจหน่วงระหว่างคำนวณ)
+      aiSetStatus('loading', 'กำลังโหลด AI (โหมดสำรอง)…', 0.05);
       AI.T = AI.T || await import(AI_LIB);
       AI.T.env.allowLocalModels = false;
-      AI.files = {};
-      const onProgress = e => {
-        if (e.status !== 'progress' || !e.total) return;
-        AI.files[e.file] = { l: e.loaded, t: e.total };
-        let l = 0, t = 0; for (const k in AI.files) { l += AI.files[k].l; t += AI.files[k].t; }
-        aiSetStatus('loading', `กำลังดาวน์โหลดโมเดล ${mb(l)} / ${mb(t)} MB`, 0.05 + 0.9 * (l / t));
-      };
-      aiSetStatus('loading', 'กำลังดาวน์โหลดโมเดล…', 0.05);
-      AI.model = await AI.T.SamModel.from_pretrained(AI_MODEL, { dtype: 'q8', device: 'wasm', progress_callback: onProgress });
-      AI.proc = await AI.T.AutoProcessor.from_pretrained(AI_MODEL, { progress_callback: onProgress });
+      if (AI_HOST) { AI.T.env.remoteHost = AI_HOST; AI.T.env.remotePathTemplate = '{model}/resolve/{revision}/'; }
+      try { if (!self.crossOriginIsolated) AI.T.env.backends.onnx.wasm.numThreads = 1; } catch (e) {}
+      try { if (AI_HOST) AI.T.env.backends.onnx.wasm.wasmPaths = AI_HOST.replace(/hf\/$/, 'ort/'); } catch (e) {}
+      AI.model = await AI.T.SamModel.from_pretrained(AI_MODEL, { dtype: 'q8', device: 'wasm', progress_callback: aiProgress });
+      AI.proc = await AI.T.AutoProcessor.from_pretrained(AI_MODEL, { progress_callback: aiProgress });
       const names = (AI.model.sessions && AI.model.sessions.prompt_encoder_mask_decoder &&
                      AI.model.sessions.prompt_encoder_mask_decoder.inputNames) || [];
       AI.boxNative = names.indexOf('input_boxes') >= 0;   // โมเดลบางตัวรับกรอบโดยตรง
+      AI.mode = 'main';
       aiSetStatus('ready', 'AI พร้อมใช้งาน — คลิกที่วัตถุในภาพได้เลย');
       return true;
     } catch (err) {
       console.error(err);
-      AI.model = null;
+      AI.model = null; AI.mode = null;
       const blocked = inViewer || location.protocol === 'file:';
       aiSetStatus('error', blocked
         ? 'หน้านี้โหลดโมเดล AI ไม่ได้ — เปิดผ่าน DocDesk (GitHub Pages) เพื่อใช้ AI'
-        : 'โหลด AI ไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ต แล้วลองใหม่');
+        : 'โหลด AI ไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ต แล้วลองใหม่' + (AI.lastWorkerError ? ` (${AI.lastWorkerError.slice(0, 80)})` : ''));
       return false;
     }
   }
@@ -1086,29 +1298,46 @@ body.embed .panel{position:static}
     const W = imgC.width, H = imgC.height, k = Math.min(1, 1024 / Math.max(W, H));
     const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(W * k)); c.height = Math.max(1, Math.round(H * k));
     const cx = c.getContext('2d', { willReadFrequently: true }); cx.imageSmoothingQuality = 'high'; cx.drawImage(imgC, 0, 0, c.width, c.height);
-    const raw = AI.T.RawImage.fromCanvas(c).rgb();
-    const inputs = await AI.proc(raw);
-    AI.emb = await AI.model.get_image_embeddings(inputs);
-    AI.info = { k, w: c.width, h: c.height, orig: inputs.original_sizes, resh: inputs.reshaped_input_sizes };
+    if (AI.mode === 'worker') {
+      // ส่งเฉพาะข้อมูลสี RGB ไปให้ worker (โอนย้ายหน่วยความจำ ไม่ต้องคัดลอก)
+      const px = cx.getImageData(0, 0, c.width, c.height).data;
+      const rgb = new Uint8Array(c.width * c.height * 3);
+      for (let i = 0, j = 0; i < px.length; i += 4, j += 3) { rgb[j] = px[i]; rgb[j + 1] = px[i + 1]; rgb[j + 2] = px[i + 2]; }
+      await aiAsk({ type: 'embed', data: rgb, w: c.width, h: c.height }, [rgb.buffer]);
+      AI.info = { k, w: c.width, h: c.height };
+    } else {
+      const raw = AI.T.RawImage.fromCanvas(c).rgb();
+      const inputs = await AI.proc(raw);
+      AI.emb = await AI.model.get_image_embeddings(inputs);
+      AI.info = { k, w: c.width, h: c.height, orig: inputs.original_sizes, resh: inputs.reshaped_input_sizes };
+    }
     AI.embVer = state.imgVer;
   }
   // จุดบวก/ลบ (+กรอบ ถ้ามี) พิกัดภาพจริง → พื้นที่ที่เลือกขนาดเท่าภาพ
   async function aiMask(points, labels, box) {
-    const { k, orig, resh } = AI.info;
+    const { k } = AI.info;
     const pts = points.map(p => [p.x * k, p.y * k]);
-    const input_points = AI.proc.reshape_input_points([pts], orig, resh);
-    const input_labels = AI.proc.image_processor.add_input_labels([labels], input_points);
-    const feed = { ...AI.emb, input_points, input_labels };
-    if (box && AI.boxNative) {
+    const bx = box && AI.boxNative ? [box.x0 * k, box.y0 * k, box.x1 * k, box.y1 * k] : null;
+    let plane, mw, mh, score = null;
+    if (AI.mode === 'worker') {
+      const r = await aiAsk({ type: 'segment', pts, labels, box: bx });
+      plane = r.plane; mw = r.mw; mh = r.mh;
+    } else {
+      const { orig, resh } = AI.info;
+      const input_points = AI.proc.reshape_input_points([pts], orig, resh);
+      const input_labels = AI.proc.image_processor.add_input_labels([labels], input_points);
+      const feed = { ...AI.emb, input_points, input_labels };
       // โมเดลรองรับกรอบโดยตรง (ถ้าไม่รองรับ ไลบรารีจะข้ามอินพุตนี้ไปเอง)
-      feed.input_boxes = AI.proc.reshape_input_points([[[box.x0 * k, box.y0 * k, box.x1 * k, box.y1 * k]]], orig, resh, true);
+      if (bx) feed.input_boxes = AI.proc.reshape_input_points([[bx]], orig, resh, true);
+      const out = await AI.model(feed);
+      const masks = await AI.proc.post_process_masks(out.pred_masks, orig, resh);
+      const m = masks[0], dims = m.dims;
+      mh = dims[dims.length - 2]; mw = dims[dims.length - 1];
+      const scores = out.iou_scores.data;
+      let best = 0; for (let i = 1; i < scores.length; i++) if (scores[i] > scores[best]) best = i;
+      plane = m.data.subarray(best * mh * mw, (best + 1) * mh * mw);
+      score = scores[best];
     }
-    const out = await AI.model(feed);
-    const masks = await AI.proc.post_process_masks(out.pred_masks, orig, resh);
-    const m = masks[0], dims = m.dims, mh = dims[dims.length - 2], mw = dims[dims.length - 1];
-    const scores = out.iou_scores.data, nMask = scores.length;
-    let best = 0; for (let i = 1; i < nMask; i++) if (scores[i] > scores[best]) best = i;
-    const plane = m.data.subarray(best * mh * mw, (best + 1) * mh * mw);
     // ขยายหน้ากากกลับเป็นขนาดภาพจริง
     const small = document.createElement('canvas'); small.width = mw; small.height = mh;
     const sctx = small.getContext('2d'); const id = sctx.createImageData(mw, mh);
@@ -1128,12 +1357,12 @@ body.embed .panel{position:static}
     } else {
       for (let i = 0; i < W * H; i++) if (bd[i * 4 + 3] >= 128) { sel[i] = 1; n++; }
     }
-    return { sel, n, score: scores[best] };
+    return { sel, n, score };
   }
   // ชี้ด้วยการคลิก (opt.point) หรือกรอบ (opt.box)
   async function aiRun(opt) {
     if (AI.busy) { toast('AI กำลังทำงาน รอสักครู่'); return; }
-    if (!AI.model) { const ok = await aiLoad(); if (!ok) return; }
+    if (!AI.mode) { const ok = await aiLoad(); if (!ok) return; }
     const e = opt.ev || {};
     const p = opt.point;
     if (p && (p.x < 0 || p.y < 0 || p.x >= imgC.width || p.y >= imgC.height)) return;
@@ -1182,7 +1411,7 @@ body.embed .panel{position:static}
       toast('AI ประมวลผลไม่สำเร็จ: ' + (err && err.message ? err.message : err), true);
     } finally {
       AI.busy = false;
-      if (AI.model) aiSetStatus('ready', 'AI พร้อมใช้งาน — คลิกที่วัตถุในภาพได้เลย');
+      if (AI.mode) aiSetStatus('ready', 'AI พร้อมใช้งาน — คลิกที่วัตถุในภาพได้เลย');
     }
   }
   // เติมช่องว่างที่ถูกล้อมรอบด้วยพื้นที่ที่เลือก (ทำเฉพาะในกรอบของพื้นที่ เพื่อความเร็ว)
@@ -1463,6 +1692,7 @@ body.embed .panel{position:static}
     $('aiOpts').classList.toggle('hidden', t !== 'ai');
     $('lassoOpts').classList.toggle('hidden', t !== 'lasso');
     $('cursor').style.display = 'none';
+    drawHelp();
   }
   function setSize(v) {
     state.size = Math.max(4, Math.min(120, v));
@@ -1486,6 +1716,13 @@ body.embed .panel{position:static}
   pair('aiAdd', 'aiSub', 'aiSub');
   $('aiGrow').oninput = e => { state.aiGrow = +e.target.value; $('aiGrowOut').textContent = state.aiGrow + ' px'; };
   $('aiLoadBtn').onclick = () => aiLoad();
+  $('aiCancelBtn').onclick = () => {
+    if (AI.worker) { try { AI.worker.terminate(); } catch (e) {} AI.worker = null; }
+    AI.jobs.forEach(j => j.reject(new Error('ยกเลิกแล้ว'))); AI.jobs.clear();
+    AI.mode = null; AI.model = null; AI.proc = null; AI.emb = null; AI.embVer = -1; AI.busy = false; AI.last = null;
+    aiSetStatus('idle', 'ยกเลิกแล้ว — กดเปิดใช้ AI ใหม่ได้');
+    $('aiLoadBtn').classList.remove('hidden');
+  };
   $('aiPoint').onclick = () => setAiBox(false);
   $('aiBox').onclick = () => setAiBox(true);
   function setAiBox(v) {
@@ -1495,6 +1732,7 @@ body.embed .panel{position:static}
       ? 'กดค้างแล้วลากกรอบครอบวัตถุ · กด <kbd>Alt</kbd> ค้างขณะลาก = ตัดวัตถุในกรอบออกจากที่เลือกไว้'
       : 'คลิกที่วัตถุ = เลือกทั้งชิ้น · <kbd>Shift</kbd>+คลิก = เพิ่มส่วนให้ชิ้นล่าสุด · <kbd>Shift</kbd>+<kbd>Alt</kbd>+คลิก = ตัดส่วนเกินของชิ้นล่าสุด';
   }
+  $('helpToggle').onclick = () => setHelpOpen($('helpBox').classList.contains('collapsed'));
   $('cutBtn').onclick = cutout;
   $('cutFill').onchange = e => { state.cutFill = e.target.value; $('cutColorWrap').classList.toggle('hidden', e.target.value !== 'custom'); };
   $('cutColor').oninput = () => { if (state.cutFill === 'custom') state.cutFill = 'custom'; };
@@ -1573,8 +1811,12 @@ body.embed .panel{position:static}
     }
   });
 
+  let helpOpen = true;
+  try { helpOpen = localStorage.getItem(HELP_KEY) !== '0'; } catch (e) {}
+  setHelpOpen(helpOpen);
+  drawHelp();
   refresh();
-  window.__eraserTest = { makeDemo, state: () => ({ zoom: state.zoom, hist: state.history.map(h => h.type), hasMask: state.hasMask, ai: AI.status, imgVer: state.imgVer, embVer: AI.embVer, boxNative: AI.boxNative }) };
+  window.__eraserTest = { makeDemo, killWorker: () => { try { AI.worker && AI.worker.terminate(); } catch (e) {} }, state: () => ({ zoom: state.zoom, hist: state.history.map(h => h.type), hasMask: state.hasMask, ai: AI.status, aiMode: AI.mode, imgVer: state.imgVer, embVer: AI.embVer, boxNative: AI.boxNative }) };
 
   /* =========================================================
      โหมดฝังใน DocDesk (eraser.html?embed=1)
