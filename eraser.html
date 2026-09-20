@@ -28,380 +28,404 @@
   --checker-a:#1B2433; --checker-b:#222D3F; color-scheme:dark;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
 button,select,input{font:inherit;color:inherit}
-.wrap{max-width:1240px;margin:0 auto;padding:20px 16px 40px}
+.app{display:flex;flex-direction:column;gap:6px;height:100%;min-height:480px;padding:8px;max-width:1800px;margin:0 auto;
+  overflow-x:hidden;overflow-y:auto}   /* จอเตี้ยมาก ให้เลื่อนหน้า ไม่ใช่บีบแถบ */
+.app:fullscreen{max-width:none;background:var(--bg);padding:12px}
 
-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
-h1{font-size:1.9rem;line-height:1.15;margin:0;font-weight:700;letter-spacing:-.01em;position:relative;z-index:0}
-h1 .stroke{position:relative;white-space:nowrap}
-h1 .stroke::after{content:"";position:absolute;left:-4px;right:-4px;bottom:.08em;height:.42em;
-  background:var(--mask);opacity:.45;border-radius:99px;z-index:-1;transform:rotate(-1.2deg)}
-.sub{margin:6px 0 0;color:var(--muted);max-width:60ch}
-.privacy{font-size:.85rem;color:var(--ok);display:flex;align-items:center;gap:6px}
+/* ===== แถบบน ===== */
+.topbar,.toolbar,.bottombar{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;min-width:0;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 9px;
+  flex:0 0 auto;overflow:visible}   /* ห้ามถูกบีบจนข้อความถูกตัด และห้ามตัดขอบป็อปอัป */
+.toolbar{row-gap:6px}
+.brand{font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.spacer{flex:1 1 auto}
+.privacy{font-size:.78rem;color:var(--ok);white-space:nowrap}
+.modetabs{display:flex;gap:3px;border:1px solid var(--line);border-radius:10px;padding:3px}
+.modetabs button{border:0;background:transparent;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:.85rem;white-space:nowrap}
+.modetabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.tbtn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:5px 9px;cursor:pointer;font-size:.82rem;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.tbtn:hover:not(:disabled){border-color:var(--ink)}
+.tbtn:disabled{opacity:.45;cursor:not-allowed}
 
-.layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
-@media (max-width:880px){.layout{grid-template-columns:1fr}}
+/* ===== แถบวิธีใช้ ===== */
+.helpbar{background:color-mix(in srgb,var(--accent) 7%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));
+  border-radius:12px;padding:6px 10px;font-size:.8rem;flex:0 0 auto}
+.helpbar.collapsed{display:none}
+.helpbar .body{display:flex;gap:5px 6px;flex-wrap:wrap;align-items:center;min-width:0}
+.helpbar b{color:var(--accent);flex:none}
+#helpSteps{display:contents}          /* ให้ป้ายขั้นตอนตัดบรรทัดเองได้ ไม่ดันหน้าให้ล้น */
+.helpbar .step{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:1px 9px;font-size:.78rem;max-width:100%}
+@media (max-width:760px){ .helpbar .step{white-space:normal} }
+@media (min-width:761px){ .helpbar .step{white-space:nowrap} }
+.helpbar .tip{color:var(--muted);font-size:.76rem;flex-basis:100%}
+
+/* ===== แถบเครื่องมือ ===== */
+.toolbar{row-gap:6px}
+.tgroup{display:flex;align-items:center;gap:6px;flex:none;max-width:100%;flex-wrap:wrap}
+.tgroup.grow{flex:1 1 260px;min-width:220px}
+.tgroup.info{font-size:.78rem;color:var(--muted);flex:1 1 100%;order:9;line-height:1.35}
+.tlabel{font-size:.82rem;color:var(--muted);white-space:nowrap}
+.px{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cap{font-size:.76rem;color:var(--warn);white-space:nowrap}
+.toolbar input[type=range]{flex:1 1 80px;min-width:70px;accent-color:var(--accent)}
+.num{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:9px;padding:3px 6px;background:var(--panel)}
+.num input{width:44px;border:0;background:transparent;text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
+.num input::-webkit-outer-spin-button,.num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.num span{color:var(--muted);font-size:.82rem}
+.quick{display:inline-flex;gap:4px;flex-wrap:wrap}
+.quick button{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:3px 9px;font-size:.78rem;cursor:pointer}
+.quick button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.seg{display:inline-flex;gap:3px;border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{border:0;background:transparent;padding:5px 9px;border-radius:7px;cursor:pointer;font-size:.82rem;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel);font-weight:600}
+.presetgrid{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;max-width:100%;scrollbar-width:thin}
+.presetgrid button{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:4px 9px;cursor:pointer;font-size:.78rem;white-space:nowrap;line-height:1.25;text-align:left}
+.presetgrid button b{display:block;font-size:.8rem;font-weight:600}
+.presetgrid button small{color:var(--muted);font-size:.68rem}
+.presetgrid button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--panel))}
+.dims{display:inline-flex;align-items:center;gap:4px}
+.dims input{width:76px;padding:5px 6px;border:1px solid var(--line);border-radius:8px;background:var(--panel);text-align:center;font-variant-numeric:tabular-nums}
+select{padding:6px 8px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font-size:.84rem}
+input[type=color]{width:38px;height:30px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:2px}
+/* ป็อปอัปตั้งค่าละเอียด */
+.pop-wrap{position:relative}
+.pop{position:absolute;top:calc(100% + 8px);left:auto;right:0;z-index:20;width:min(250px,calc(100vw - 24px));background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:12px;box-shadow:0 10px 26px rgba(0,0,0,.18)}
+.pop .lbl{font-size:.8rem;display:block;margin:6px 0 2px;color:var(--muted)}
+.pop .lbl:first-child{margin-top:0}
+.pop .range{display:flex;align-items:center;gap:8px}
+.pop .range input{flex:1;accent-color:var(--accent)}
+.pop .range output{min-width:42px;text-align:right;font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.pop .hint{font-size:.76rem;color:var(--muted);margin:8px 0 0}
+.switchrow{display:inline-flex;align-items:center;gap:7px}
+.switchrow .txt{font-size:.84rem;white-space:nowrap}
+.switch{position:relative;width:42px;height:24px;flex:none;border:0;border-radius:99px;background:var(--line);cursor:pointer;transition:background .18s;padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .18s}
+.switch[aria-checked="true"]{background:var(--accent)}
+.switch[aria-checked="true"]::after{transform:translateX(18px)}
 
 /* ===== พื้นที่ภาพ ===== */
-.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;min-width:0}
-.canvas-box{position:relative;height:min(70vh,720px);min-height:360px;border-radius:10px;overflow:hidden;
-  background-color:var(--checker-a);
-  background-image:linear-gradient(45deg,var(--checker-b) 25%,transparent 25%,transparent 75%,var(--checker-b) 75%),
-                   linear-gradient(45deg,var(--checker-b) 25%,transparent 25%,transparent 75%,var(--checker-b) 75%);
-  background-size:20px 20px;background-position:0 0,10px 10px}
-/* scroller: เลื่อนดูภาพเมื่อซูมใหญ่กว่ากรอบ (margin:auto ของลูก = จัดกลางแบบไม่ตัดขอบ) */
-.scroller{position:absolute;inset:0;overflow:auto;display:flex;padding:12px;overscroll-behavior:contain}
-.layers{position:relative;margin:auto;line-height:0;flex:none;box-shadow:0 1px 8px rgba(0,0,0,.18)}
-.layers canvas{display:block}
-#imgCanvas{width:100%;height:100%}
-#imgCanvas.pixel{image-rendering:pixelated}
-#maskCanvas{position:absolute;inset:0;width:100%;height:100%;opacity:.55;touch-action:none;cursor:none}
-.layers.tool-magic #maskCanvas,.layers.tool-lasso #maskCanvas,.layers.tool-ai #maskCanvas{cursor:crosshair}
-.layers.ai-busy #maskCanvas{cursor:progress}
-#lassoSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-#lassoSvg.box polyline{stroke-dasharray:none}
-#lassoSvg polyline{fill:color-mix(in srgb,var(--mask) 25%,transparent);stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
-#lassoSvg .l1{stroke:#fff}
-#lassoSvg .l2{stroke:#111;stroke-dasharray:5 5;fill:none;animation:ants .6s linear infinite}
-#lassoSvg.sub polyline.l1{fill:rgba(0,0,0,.18)}
-@keyframes ants{to{stroke-dashoffset:-10}}
-.layers.tool-hand #maskCanvas{cursor:grab}
-.layers.tool-hand.panning #maskCanvas{cursor:grabbing}
-.layers.peek #maskCanvas{opacity:0}
-#cursor{position:absolute;pointer-events:none;border:2px solid #fff;outline:1.5px solid rgba(0,0,0,.55);border-radius:50%;
-  transform:translate(-50%,-50%);display:none}
-.layers.tool-magic #cursor,.layers.tool-hand #cursor,.layers.tool-lasso #cursor,.layers.tool-ai #cursor{display:none!important}
-
-/* แถบซูมลอยมุมขวาล่าง */
-.zoombar{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:2px;padding:4px;border-radius:12px;
+.view{position:relative;flex:1 1 auto;min-height:220px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:
+  linear-gradient(45deg,color-mix(in srgb,var(--line) 45%,transparent) 25%,transparent 25%,transparent 75%,color-mix(in srgb,var(--line) 45%,transparent) 75%) 0 0/18px 18px,
+  linear-gradient(45deg,color-mix(in srgb,var(--line) 45%,transparent) 25%,transparent 25%,transparent 75%,color-mix(in srgb,var(--line) 45%,transparent) 75%) 9px 9px/18px 18px,
+  color-mix(in srgb,var(--line) 18%,var(--panel))}
+.scroller{position:absolute;inset:0;overflow:auto;display:flex;padding:10px;overscroll-behavior:contain}
+.compare{position:relative;line-height:0;margin:auto;flex:none;touch-action:none;user-select:none;box-shadow:0 1px 8px rgba(0,0,0,.18)}
+.compare canvas{display:block;width:100%;height:100%}
+.compare .after{position:absolute;inset:0;width:100%;height:100%;clip-path:inset(0 0 0 var(--split,50%))}
+.compare .bar{position:absolute;top:0;bottom:0;left:var(--split,50%);width:2px;background:var(--glow);box-shadow:0 0 0 1px rgba(0,0,0,.35);cursor:ew-resize}
+.compare .bar::after{content:"⇆";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;
+  background:var(--glow);color:#06221F;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.compare.zoomed{cursor:grab}.compare.panning{cursor:grabbing}
+.compare.pixel canvas{image-rendering:pixelated}
+.tagl,.tagr{position:absolute;top:8px;font-size:.74rem;padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--ink) 72%,transparent);color:var(--panel)}
+.tagl{left:8px}.tagr{right:8px}
+.zoombar{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:2px;padding:4px;border-radius:12px;z-index:2;
   background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.15)}
 .zoombar button{border:0;background:transparent;min-width:34px;height:32px;border-radius:8px;cursor:pointer;font-size:1rem;padding:0 8px}
 .zoombar button:hover:not(:disabled){background:color-mix(in srgb,var(--ink) 8%,transparent)}
 .zoombar button:disabled{opacity:.4;cursor:not-allowed}
-.zoombar #zoomPct{min-width:62px;font-size:.85rem;font-variant-numeric:tabular-nums}
+.zoombar #zoomPct{min-width:58px;font-size:.85rem;font-variant-numeric:tabular-nums}
 .zoombar .sep{width:1px;height:20px;background:var(--line);margin:0 2px}
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:22px;background:var(--panel);cursor:pointer}
+.empty strong{font-size:1.1rem}.empty small{color:var(--muted)}
+.busy{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:color-mix(in srgb,var(--panel) 74%,transparent);backdrop-filter:blur(2px);z-index:3;font-weight:600}
+.bar2{width:min(320px,70%);height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar2 i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--glow));transition:width .15s}
 
-.drop{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
-  border:2px dashed var(--line);border-radius:10px;background:var(--panel);text-align:center;padding:24px;cursor:pointer}
-.drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel))}
-.drop strong{font-size:1.15rem}
-.drop small{color:var(--muted)}
+/* ===== แถบล่าง ===== */
+.bottombar{font-size:.8rem}
+.stat{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.sizes{display:inline-flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:99px;padding:2px 9px;font-size:.78rem}
+.chip b{font-variant-numeric:tabular-nums}
+.chip.new{border-color:var(--accent);color:var(--accent)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:.88rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;padding:8px 16px;font-size:.9rem}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .hidden{display:none!important}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:10px;
+  font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s;max-width:92vw;z-index:50}
+.toast.show{opacity:1}.toast.err{background:var(--warn);color:#fff}
+kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:.78rem}
+/* โหมดฝังใน DocDesk */
+body.embed{background:transparent}
+body.embed .app{padding:0;height:auto}
+body.embed .view,body.embed .canvas-box{height:var(--boxh,460px);flex:none}
+/* ตอนเต็มจอ ให้ภาพสูงเต็มพื้นที่ แม้อยู่ในกรอบ DocDesk */
+.app:fullscreen{height:100vh}
+.app:fullscreen .view,body.expanded .view,
+.app:fullscreen .canvas-box,body.expanded .canvas-box{height:auto!important;flex:1 1 auto!important}
+body.expanded .app{position:fixed;inset:0;z-index:9999;background:var(--bg);padding:10px;height:100vh}
+body.expanded .view{height:auto;flex:1 1 auto}
+@media (max-width:980px){ .brand{display:none} }
+@media (max-width:760px){
+  body{font-size:13.5px}
+  .privacy{display:none}
+  .app{padding:6px;gap:5px}
+  .topbar,.toolbar,.bottombar{padding:5px 7px;gap:5px 6px}
+  .tbtn,.modetabs button,.seg button,.quick button{font-size:.78rem;padding:4px 8px}
+  .tlabel{font-size:.76rem}
+  .px{font-size:.86rem}
+  .tgroup.grow{flex:1 1 100%;min-width:0}
+  .quick{flex:1 1 auto;justify-content:space-between;flex-wrap:nowrap}
+  .num input{width:38px}
+  #upPanel .tgroup:first-child{flex:1 1 100%}
+  .sizes{display:none}                 /* ป้ายขนาดไฟล์ไปโชว์ในแถบสถานะแทน */
+  .helpbar .tip{display:none}
+  .presetgrid{max-width:100%}
+  .bottombar #newBtn span.t{display:none}
+}
+@media (max-width:420px){
+  .helpbar .step:nth-child(n+5){display:none}   /* มือถือเล็ก: โชว์ 3 ขั้นตอนแรกพอ */
+  .modetabs button{padding:4px 7px;font-size:.74rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-.busy{position:absolute;inset:0;background:color-mix(in srgb,var(--panel) 70%,transparent);display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:10px;backdrop-filter:blur(2px);z-index:3}
+/* ===== เฉพาะเครื่องมือลบ/ย้ายวัตถุ ===== */
+.seg{flex-wrap:wrap}
+.seg.tools{flex-wrap:wrap;max-width:100%}
+.seg.tools button{font-size:.82rem}
+@media (max-width:760px){
+  .seg.tools button{font-size:.74rem;padding:4px 6px}
+  .brand{display:none}
+}
+.canvas-box{position:relative;flex:1 1 auto;min-height:240px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:
+  linear-gradient(45deg,color-mix(in srgb,var(--line) 45%,transparent) 25%,transparent 25%,transparent 75%,color-mix(in srgb,var(--line) 45%,transparent) 75%) 0 0/18px 18px,
+  linear-gradient(45deg,color-mix(in srgb,var(--line) 45%,transparent) 25%,transparent 25%,transparent 75%,color-mix(in srgb,var(--line) 45%,transparent) 75%) 9px 9px/18px 18px,
+  color-mix(in srgb,var(--line) 18%,var(--panel))}
+.layers{position:relative;margin:auto;line-height:0;flex:none;box-shadow:0 1px 8px rgba(0,0,0,.18)}
+.layers canvas{display:block;width:100%;height:100%}
+#imgCanvas.pixel{image-rendering:pixelated}
+#maskCanvas{position:absolute;inset:0;width:100%;height:100%;opacity:.55;touch-action:none;cursor:none}
+.layers.tool-magic #maskCanvas,.layers.tool-lasso #maskCanvas,.layers.tool-ai #maskCanvas{cursor:crosshair}
+.layers.tool-grab #maskCanvas{cursor:move}
+.layers.tool-hand #maskCanvas{cursor:grab}
+.layers.tool-hand.panning #maskCanvas{cursor:grabbing}
+.layers.ai-busy #maskCanvas{cursor:progress}
+.layers.grabbing #maskCanvas{opacity:1}
+.layers.peek #maskCanvas{opacity:0}
+.layers.zoomed{cursor:grab}
+#cursor{position:absolute;pointer-events:none;border:2px solid #fff;outline:1.5px solid rgba(0,0,0,.55);border-radius:50%;transform:translate(-50%,-50%);display:none}
+.layers.tool-magic #cursor,.layers.tool-hand #cursor,.layers.tool-lasso #cursor,.layers.tool-ai #cursor,.layers.tool-grab #cursor{display:none!important}
+#lassoSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#lassoSvg polyline{fill:color-mix(in srgb,var(--mask) 25%,transparent);stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+#lassoSvg .l1{stroke:#fff}
+#lassoSvg .l2{stroke:#111;stroke-dasharray:5 5;fill:none;animation:ants .6s linear infinite}
+#lassoSvg.box polyline{stroke-dasharray:none}
+#lassoSvg.sub polyline.l1{fill:rgba(0,0,0,.18)}
+@keyframes ants{to{stroke-dashoffset:-10}}
+.drop{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px;background:var(--panel);cursor:pointer}
+.drop strong{font-size:1.05rem}.drop small{color:var(--muted)}
+.drop.over{background:color-mix(in srgb,var(--accent) 7%,var(--panel))}
+.busy{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:color-mix(in srgb,var(--panel) 72%,transparent);backdrop-filter:blur(2px);z-index:3}
 .bar{width:min(320px,70%);height:8px;border-radius:99px;background:var(--line);overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}
-
-.stagebar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;color:var(--muted);font-size:.85rem}
-
-/* ===== แผงควบคุม ===== */
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:16px;position:sticky;top:12px}
-.group h2{font-size:.95rem;margin:0 0 8px;font-weight:600}
-.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
-.seg.three{grid-template-columns:repeat(3,1fr)}
-.seg.six{grid-template-columns:repeat(2,1fr)}
-.seg button{border:0;background:transparent;padding:8px 6px;border-radius:7px;cursor:pointer;font-size:.9rem;white-space:nowrap}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel);font-weight:600}
-.seg button[aria-pressed="true"] kbd{border-color:color-mix(in srgb,var(--panel) 45%,transparent)}
-.seg button#toolMagic[aria-pressed="true"]{background:var(--magic);color:#fff}
-.seg button#toolAi[aria-pressed="true"]{background:linear-gradient(135deg,var(--accent),var(--magic));color:#fff}
-.range{display:flex;align-items:center;gap:10px}
-.range input{flex:1;accent-color:var(--accent)}
-.range output{min-width:48px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
-.hint{font-size:.8rem;color:var(--muted);margin:6px 0 0}
-.opts{display:flex;flex-direction:column;gap:10px}
-.opts label.lbl{font-size:.85rem;display:block;margin-bottom:2px}
-.check{display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer}
-.check input{accent-color:var(--magic);width:16px;height:16px}
-.magic-box{border:1px solid color-mix(in srgb,var(--magic) 40%,var(--line));border-radius:10px;padding:10px;
-  background:color-mix(in srgb,var(--magic) 6%,var(--panel))}
-.magic-box .range input{accent-color:var(--magic)}
-.magic-mode{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.magic-mode button{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px;cursor:pointer;font-size:.85rem}
-.magic-mode button[aria-pressed="true"]{border-color:var(--magic);color:var(--magic);font-weight:600}
-.ai-box{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
-.ai-status{font-size:.85rem;display:flex;gap:8px;align-items:flex-start}
-.ai-status .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);margin-top:.45em;flex:none}
+.ai-status{display:inline-flex;gap:6px;align-items:center;font-size:.8rem;max-width:340px}
+.ai-status .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
 .ai-status.ready .dot{background:var(--ok)}
 .ai-status.loading .dot,.ai-status.working .dot{background:var(--accent);animation:pulse 1s ease-in-out infinite}
 .ai-status.error .dot{background:var(--warn)}
 @keyframes pulse{50%{opacity:.25}}
-.ai-bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
-.cut-box{border-color:color-mix(in srgb,var(--ok) 45%,var(--line));background:color-mix(in srgb,var(--ok) 6%,var(--panel))}
-.btn.cut{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:600;width:100%;padding:11px}
-.btn.cut:hover:not(:disabled){filter:brightness(1.08)}
-select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
-.ai-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--magic));transition:width .2s}
-
-.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-.btn:hover:not(:disabled){border-color:var(--ink)}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;padding:12px;font-size:1rem;width:100%}
-.btn.primary:hover:not(:disabled){filter:brightness(1.08);border-color:var(--accent)}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-
-.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:10px;
-  font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:10}
-.toast.show{opacity:1}
-.toast.err{background:var(--warn);color:#fff}
-
-details.guide{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
-details.guide summary{cursor:pointer;font-weight:600}
-details.guide ol{margin:10px 0 4px;padding-left:20px}
-details.guide li{margin:4px 0}
-details.guide table{border-collapse:collapse;font-size:.85rem;margin-top:8px}
-details.guide td{padding:3px 10px 3px 0;vertical-align:top}
-kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:.78rem;font-family:inherit}
-/* ===== กล่องวิธีใช้ข้างจอ ===== */
-.help{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:12px 14px;
-  background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
-.help header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0}
-.help h2{margin:0;font-size:.95rem;font-weight:600}
-.help .toggle{border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:.82rem;padding:2px 4px;border-radius:6px}
-.help .toggle:hover{color:var(--ink)}
-.help .body{margin-top:8px;font-size:.86rem;line-height:1.6}
-.help.collapsed .body{display:none}
-.help .now{font-weight:600;color:var(--accent);display:block;margin-bottom:4px}
-.help ol{margin:0;padding-left:1.15em}
-.help ol li{margin:3px 0}
-.help ol li b{font-weight:600}
-.help .tip{margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--line);color:var(--muted);font-size:.8rem}
-.help kbd{font-size:.75rem}
-
-/* ===== โหมดฝังใน DocDesk ===== */
-body.embed{background:transparent}
-body.embed .wrap{padding:0;max-width:none}
-body.embed header{display:none}
-body.embed .canvas-box{height:var(--boxh,520px);min-height:320px}
-body.embed .layout{grid-template-columns:1fr 280px;gap:12px}
-@media (max-width:760px){body.embed .layout{grid-template-columns:1fr}}
-body.embed .panel{position:static}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.ai-bar{width:90px;height:6px;border-radius:99px;background:var(--line);overflow:hidden;display:inline-block}
+.ai-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--mask));transition:width .2s}
+.check{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;cursor:pointer;white-space:nowrap}
+.check input{accent-color:var(--accent);width:15px;height:15px}
+.hint{font-size:.76rem;color:var(--muted)}
+.tbtn.cut{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:600}
+.tbtn.grab{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:600}
+.tgroup .tlabel{white-space:nowrap}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>ลบ<span class="stroke">วัตถุ</span>ออกจากภาพ</h1>
-      <p class="sub">เลือกสิ่งที่ไม่ต้องการด้วย 🤖 AI, 🪄 Magic, ➰ Lasso หรือแปรง แล้วกด “ลบวัตถุ” ระบบจะเติมพื้นที่ด้วยลวดลายจากส่วนอื่นของภาพ</p>
+<div class="app" id="app">
+  <!-- ===== แถบบน: เครื่องมือเลือกพื้นที่ ===== -->
+  <div class="topbar">
+    <span class="brand">🪄 ลบ / ย้ายวัตถุ</span>
+    <div class="seg tools" role="group" aria-label="เครื่องมือเลือกพื้นที่">
+      <button type="button" id="toolAi" data-tool="ai" aria-pressed="false">🤖 AI</button>
+      <button type="button" id="toolMagic" data-tool="magic" aria-pressed="false">🪄 Magic</button>
+      <button type="button" id="toolLasso" data-tool="lasso" aria-pressed="false">➰ Lasso</button>
+      <button type="button" id="toolGrab" data-tool="grab" aria-pressed="false">🧲 ย้ายวัตถุ</button>
+      <button type="button" id="toolBrush" data-tool="brush" aria-pressed="true">🖌️ ระบาย</button>
+      <button type="button" id="toolErase" data-tool="erase" aria-pressed="false">🩹 ลบรอย</button>
+      <button type="button" id="toolHand" data-tool="hand" aria-pressed="false">✋ เลื่อน</button>
     </div>
-    <div class="privacy" title="ภาพไม่ถูกส่งออกนอกเครื่อง">🔒 ประมวลผลในเบราว์เซอร์ ไม่อัปโหลดภาพ</div>
-  </header>
-
-  <div class="layout">
-    <section class="stage" aria-label="พื้นที่ภาพ">
-      <div class="canvas-box" id="box">
-        <div class="scroller hidden" id="scroller">
-          <div class="layers tool-brush" id="layers">
-            <canvas id="imgCanvas"></canvas>
-            <canvas id="maskCanvas" aria-label="เลือกพื้นที่ที่ต้องการลบ"></canvas>
-            <svg id="lassoSvg" class="hidden" preserveAspectRatio="none" aria-hidden="true"><polyline class="l1"/><polyline class="l2"/></svg>
-            <div id="cursor"></div>
-          </div>
-        </div>
-        <div class="zoombar hidden" id="zoombar" role="group" aria-label="ย่อขยายภาพ">
-          <button type="button" id="zoomOut" title="ย่อ (Ctrl + −)" aria-label="ย่อภาพ">−</button>
-          <button type="button" id="zoomPct" title="คลิกเพื่อดูขนาดจริง 100%">100%</button>
-          <button type="button" id="zoomIn" title="ขยาย (Ctrl + +)" aria-label="ขยายภาพ">+</button>
-          <span class="sep"></span>
-          <button type="button" id="zoomFit" title="พอดีกรอบ (0)">⤢ พอดีจอ</button>
-        </div>
-        <div class="drop" id="drop" tabindex="0" role="button" aria-label="เลือกภาพ">
-          <div style="font-size:2.4rem">🖼️</div>
-          <strong>ลากภาพมาวาง หรือคลิกเพื่อเลือก</strong>
-          <small>รองรับ JPG, PNG, WebP · วางจากคลิปบอร์ดด้วย Ctrl+V ได้</small>
-          <button class="btn" id="demoBtn" type="button">ลองกับภาพตัวอย่าง</button>
-        </div>
-        <div class="busy hidden" id="busy" role="status" aria-live="polite">
-          <strong id="busyText">กำลังลบวัตถุ…</strong>
-          <div class="bar"><i id="barFill"></i></div>
-          <small id="busyPct">0%</small>
-        </div>
-      </div>
-      <div class="stagebar">
-        <span id="info">ยังไม่มีภาพ</span>
-        <span id="timeInfo"></span>
-      </div>
-      <input type="file" id="file" accept="image/*" hidden>
-    </section>
-
-    <aside class="panel" aria-label="เครื่องมือ">
-      <section class="help" id="helpBox" aria-label="วิธีใช้">
-        <header>
-          <h2>📖 วิธีใช้</h2>
-          <button type="button" class="toggle" id="helpToggle" aria-expanded="true">ซ่อน</button>
-        </header>
-        <div class="body" id="helpBody">
-          <span class="now" id="helpNow"></span>
-          <ol id="helpSteps"></ol>
-          <p class="tip" id="helpTip"></p>
-        </div>
-      </section>
-
-      <div class="group">
-        <h2>เครื่องมือเลือกพื้นที่</h2>
-        <div class="seg six" role="group">
-          <button type="button" id="toolAi" data-tool="ai" aria-pressed="false">🤖 AI <kbd>A</kbd></button>
-          <button type="button" id="toolMagic" data-tool="magic" aria-pressed="false">🪄 Magic <kbd>W</kbd></button>
-          <button type="button" id="toolLasso" data-tool="lasso" aria-pressed="false">➰ Lasso <kbd>L</kbd></button>
-          <button type="button" id="toolBrush" data-tool="brush" aria-pressed="true">🖌️ ระบาย <kbd>B</kbd></button>
-          <button type="button" id="toolErase" data-tool="erase" aria-pressed="false">🩹 ลบรอย <kbd>E</kbd></button>
-          <button type="button" id="toolHand" data-tool="hand" aria-pressed="false">✋ เลื่อน <kbd>H</kbd></button>
-        </div>
-      </div>
-
-      <!-- ตัวเลือกแปรง (ระบาย / ลบรอย) -->
-      <div class="group" id="brushOpts">
-        <h2>ขนาดหัวแปรง</h2>
-        <div class="range">
-          <input type="range" id="size" min="4" max="120" value="28" aria-label="ขนาดหัวแปรง">
-          <output id="sizeOut">28 px</output>
-        </div>
-        <p class="hint">ปรับเร็วด้วย <kbd>[</kbd> <kbd>]</kbd> · ระบายให้เลยขอบวัตถุเล็กน้อย</p>
-      </div>
-
-      <!-- ตัวเลือก AI -->
-      <div class="group magic-box ai-box hidden" id="aiOpts">
-        <h2>🤖 AI เลือกวัตถุตามรูปร่าง</h2>
-        <div class="opts">
-          <div class="ai-status" id="aiStatus"><span class="dot"></span><span id="aiText">ยังไม่ได้เปิดใช้ AI</span></div>
-          <div class="ai-bar hidden" id="aiBar"><i></i></div>
-          <button type="button" class="btn" id="aiLoadBtn">⚡ เปิดใช้ AI</button>
-          <button type="button" class="btn hidden" id="aiCancelBtn">✕ ยกเลิก</button>
-          <p class="hint" style="margin:0" id="aiNote">ครั้งแรกต้องดาวน์โหลดโมเดลประมาณ 30–40 MB (ครั้งต่อไปเบราว์เซอร์จำไว้) · ประมวลผลในเครื่อง ไม่ส่งภาพออกไป</p>
-          <div>
-            <label class="lbl">วิธีชี้วัตถุ</label>
-            <div class="magic-mode" role="group" aria-label="วิธีชี้วัตถุ">
-              <button type="button" id="aiPoint" aria-pressed="true">🖱️ คลิกจุด</button>
-              <button type="button" id="aiBox" aria-pressed="false">⬛ ลากกรอบ</button>
-            </div>
-          </div>
-          <div class="magic-mode" role="group" aria-label="โหมด AI">
-            <button type="button" id="aiAdd" aria-pressed="true">＋ เลือกวัตถุ</button>
-            <button type="button" id="aiSub" aria-pressed="false">－ ตัดวัตถุ</button>
-          </div>
-          <div>
-            <label class="lbl" for="aiGrow">ขยายขอบที่เลือก</label>
-            <div class="range"><input type="range" id="aiGrow" min="0" max="30" value="6"><output id="aiGrowOut">6 px</output></div>
-          </div>
-          <p class="hint" style="margin:0" id="aiHint">คลิกที่วัตถุ = เลือกทั้งชิ้น · <kbd>Shift</kbd>+คลิก = เพิ่มส่วนให้ชิ้นล่าสุด · <kbd>Shift</kbd>+<kbd>Alt</kbd>+คลิก = ตัดส่วนเกินของชิ้นล่าสุด</p>
-        </div>
-      </div>
-
-      <!-- ตัวเลือก Lasso -->
-      <div class="group magic-box hidden" id="lassoOpts">
-        <h2>➰ Lasso วาดเส้นล้อมรอบ</h2>
-        <div class="opts">
-          <div class="magic-mode" role="group" aria-label="โหมด Lasso">
-            <button type="button" id="lassoAdd" aria-pressed="true">＋ เพิ่มพื้นที่</button>
-            <button type="button" id="lassoSub" aria-pressed="false">－ ตัดพื้นที่</button>
-          </div>
-          <p class="hint" style="margin:0">กดค้างแล้วลากล้อมรอบวัตถุ ปล่อยเมื่อครบรอบ (ระบบลากเส้นปิดให้เอง) · กด <kbd>Alt</kbd> ค้างขณะลาก = ตัดพื้นที่</p>
-        </div>
-      </div>
-
-      <!-- ตัวเลือก Magic -->
-      <div class="group magic-box hidden" id="magicOpts">
-        <h2>🪄 Magic เลือกตามสี</h2>
-        <div class="opts">
-          <div class="magic-mode" role="group" aria-label="โหมด Magic">
-            <button type="button" id="magicAdd" aria-pressed="true">＋ เพิ่มพื้นที่</button>
-            <button type="button" id="magicSub" aria-pressed="false">－ ตัดพื้นที่</button>
-          </div>
-          <div>
-            <label class="lbl" for="tol">ความไวสี (ยิ่งมาก ยิ่งเลือกกว้าง)</label>
-            <div class="range"><input type="range" id="tol" min="1" max="150" value="32"><output id="tolOut">32</output></div>
-          </div>
-          <div>
-            <label class="lbl" for="grow">ขยายขอบที่เลือก</label>
-            <div class="range"><input type="range" id="grow" min="0" max="20" value="3"><output id="growOut">3 px</output></div>
-          </div>
-          <label class="check"><input type="checkbox" id="contig" checked> เฉพาะส่วนที่ติดกัน</label>
-          <label class="check"><input type="checkbox" id="holes" checked> เติมช่องว่างข้างใน (เช่น ตัวหนังสือบนป้าย)</label>
-          <p class="hint" style="margin:0">คลิกที่วัตถุ 1 ครั้ง = เลือกทั้งชิ้น · กด <kbd>Alt</kbd> ค้างขณะคลิก = ตัดพื้นที่ · ปิด “เฉพาะส่วนที่ติดกัน” เพื่อเลือกตัวอักษรลายน้ำทั้งหมดในคลิกเดียว</p>
-        </div>
-      </div>
-
-      <div class="group">
-        <h2>คุณภาพการลบ</h2>
-        <div class="seg three" role="group" id="qualityGroup">
-          <button type="button" data-q="fast" aria-pressed="false">เร็ว</button>
-          <button type="button" data-q="balanced" aria-pressed="true">สมดุล</button>
-          <button type="button" data-q="best" aria-pressed="false">ละเอียด</button>
-        </div>
-      </div>
-
-      <button class="btn primary" id="runBtn" type="button" disabled>✨ ลบวัตถุ</button>
-
-      <div class="group magic-box cut-box">
-        <h2>🌤️ หรือเก็บเฉพาะสิ่งที่เลือก</h2>
-        <div class="opts">
-          <button class="btn cut" id="cutBtn" type="button" disabled>🪄 ลบพื้นหลัง (เก็บที่เลือกไว้)</button>
-          <div>
-            <label class="lbl" for="cutFill">พื้นหลังใหม่</label>
-            <select id="cutFill">
-              <option value="none">โปร่งใส — บันทึกเป็น PNG</option>
-              <option value="#FFFFFF">ขาว — รูปติดบัตรราชการ</option>
-              <option value="#C7DFF5">ฟ้าอ่อน — รูปติดบัตรทั่วไป</option>
-              <option value="#D64545">แดง</option>
-              <option value="custom">เลือกสีเอง…</option>
-            </select>
-          </div>
-          <div id="cutColorWrap" class="hidden">
-            <label class="lbl" for="cutColor">สีที่เลือกเอง</label>
-            <input type="color" id="cutColor" value="#0E8C93" style="width:100%;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel)">
-          </div>
-          <div>
-            <label class="lbl" for="cutFeather">ความนุ่มของขอบ</label>
-            <div class="range"><input type="range" id="cutFeather" min="0" max="12" value="2"><output id="cutFeatherOut">2 px</output></div>
-          </div>
-          <p class="hint" style="margin:0">เลือก “ตัววัตถุที่ต้องการเก็บ” ด้วย 🤖 AI แล้วกดปุ่มนี้ — ใช้กับพื้นหลังหลายสีได้</p>
-        </div>
-      </div>
-
-      <div class="row">
-        <button class="btn" id="undoBtn" type="button" disabled title="Ctrl+Z">↶ ย้อนกลับ</button>
-        <button class="btn" id="clearBtn" type="button" disabled>ล้างที่เลือก</button>
-      </div>
-      <button class="btn" id="peekBtn" type="button" disabled title="กดค้างเพื่อดูภาพต้นฉบับ">👁️ กดค้างดูภาพต้นฉบับ</button>
-
-      <div class="group">
-        <h2>บันทึกภาพ</h2>
-        <div class="row">
-          <button class="btn" id="savePng" type="button" disabled>PNG</button>
-          <button class="btn" id="saveJpg" type="button" disabled>JPG</button>
-        </div>
-      </div>
-      <button class="btn" id="newBtn" type="button">📂 เปลี่ยนภาพ</button>
-    </aside>
+    <span class="privacy" title="ภาพไม่ถูกส่งออกนอกเครื่อง">🔒 ประมวลผลในเครื่อง</span>
+    <div class="spacer"></div>
+    <button type="button" class="tbtn" id="helpToggle" aria-expanded="true">📖 วิธีใช้</button>
+    <button type="button" class="tbtn" id="fsBtn" title="ดูเต็มจอ (F)">⛶ เต็มจอ</button>
   </div>
 
-  <details class="guide">
-    <summary>📘 คู่มือใช้งานสั้นๆ</summary>
-    <ol>
-      <li>เลือกภาพ (ลากวาง / คลิก / Ctrl+V)</li>
-      <li>เลือกพื้นที่ที่จะลบ (ใช้ผสมกันได้):
-        <b>🤖 AI</b> คลิกวัตถุ ระบบหาขอบตามรูปร่าง ·
-        <b>🪄 Magic</b> คลิกเลือกตามสี ·
-        <b>➰ Lasso</b> ลากเส้นล้อมรอบ ·
-        <b>🖌️ ระบาย</b> ด้วยแปรง — เลือกเกินใช้ 🩹 ลบรอย หรือโหมด “ตัด”</li>
-      <li>ใช้ <b>+ / −</b> มุมขวาล่างซูมเข้าไปเก็บรายละเอียด และ ✋ เลื่อนภาพ</li>
-      <li>กด <b>✨ ลบวัตถุ</b> เพื่อลบสิ่งที่เลือกออก — หรือกด <b>🪄 ลบพื้นหลัง</b> เพื่อเก็บเฉพาะสิ่งที่เลือกไว้ (พื้นหลังโปร่งใสหรือใส่สีใหม่)</li>
-      <li>ยังไม่เนียน? เลือกเฉพาะจุดที่เหลือแล้วกดซ้ำ · ย้อนได้ทั้งการเลือกและการลบ</li>
-      <li>กดค้าง 👁️ เทียบกับต้นฉบับ แล้วบันทึกเป็น PNG/JPG</li>
-    </ol>
-    <table>
-      <tr><td><b>คีย์ลัด</b></td><td><kbd>A</kbd> AI · <kbd>W</kbd> Magic · <kbd>L</kbd> Lasso · <kbd>B</kbd> ระบาย · <kbd>E</kbd> ลบรอย · <kbd>H</kbd> เลื่อน (หรือกด <kbd>Space</kbd> ค้าง) · <kbd>[</kbd> <kbd>]</kbd> ขนาดแปรง</td></tr>
-      <tr><td><b>ซูม</b></td><td><kbd>Ctrl</kbd>+ล้อเมาส์ · <kbd>+</kbd> <kbd>−</kbd> · <kbd>0</kbd> พอดีจอ · <kbd>1</kbd> ขนาดจริง</td></tr>
-      <tr><td><b>อื่นๆ</b></td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> ย้อนกลับ · <kbd>Enter</kbd> ลบวัตถุ</td></tr>
-    </table>
-    <p class="hint">เหมาะกับ: ลายน้ำ ตัวอักษร สิ่งของชิ้นเล็ก สายไฟ รอยเปื้อน บนพื้นหลังที่มีลายซ้ำ (ท้องฟ้า ผนัง พื้น หญ้า)<br>
-    ข้อจำกัด: พื้นที่ใหญ่มากบนลวดลายซับซ้อน (หน้าคน ขอบโค้งของวัตถุ) ระบบจะเดาลายได้ไม่สมบูรณ์ — แนะนำลบทีละส่วน</p>
-  </details>
+  <!-- ===== แถบวิธีใช้ (เปลี่ยนตามเครื่องมือ) ===== -->
+  <div class="helpbar" id="helpBox">
+    <div class="body" id="helpBody">
+      <b class="now" id="helpNow"></b>
+      <span id="helpSteps"></span>
+      <span class="tip" id="helpTip"></span>
+    </div>
+  </div>
+
+  <!-- ===== แถบตัวเลือกของเครื่องมือที่เลือกอยู่ ===== -->
+  <div class="toolbar" id="optBar">
+    <!-- แปรง / ลบรอย -->
+    <div class="tgroup" id="brushOpts">
+      <span class="tlabel">ขนาดหัวแปรง</span>
+      <input type="range" id="size" min="4" max="120" value="28" aria-label="ขนาดหัวแปรง"><output id="sizeOut">28 px</output>
+      <span class="hint">[ ] ปรับเร็ว</span>
+    </div>
+
+    <!-- 🤖 AI -->
+    <div class="tgroup hidden" id="aiOpts">
+      <span class="ai-status" id="aiStatus"><span class="dot"></span><span id="aiText">ยังไม่ได้เปิดใช้ AI</span></span>
+      <span class="ai-bar hidden" id="aiBar"><i></i></span>
+      <button type="button" class="tbtn" id="aiLoadBtn">⚡ เปิดใช้ AI</button>
+      <button type="button" class="tbtn hidden" id="aiCancelBtn">✕ ยกเลิก</button>
+      <span class="seg" role="group" aria-label="วิธีชี้วัตถุ">
+        <button type="button" id="aiPoint" aria-pressed="true">🖱️ คลิกจุด</button>
+        <button type="button" id="aiBox" aria-pressed="false">⬛ ลากกรอบ</button>
+      </span>
+      <span class="seg" role="group" aria-label="โหมด AI">
+        <button type="button" id="aiAdd" aria-pressed="true">＋ เลือก</button>
+        <button type="button" id="aiSub" aria-pressed="false">－ ตัด</button>
+      </span>
+      <span class="tlabel">ขยายขอบ</span>
+      <input type="range" id="aiGrow" min="0" max="30" value="6" style="width:90px"><output id="aiGrowOut">6 px</output>
+      <span class="hint" id="aiHint"></span>
+      <span class="hint hidden" id="aiNote">ครั้งแรกดาวน์โหลดโมเดล 30–40 MB</span>
+    </div>
+
+    <!-- 🧲 Magic Grab -->
+    <div class="tgroup hidden" id="grabOpts">
+      <span class="ai-status" id="grabStatus"><span class="dot"></span><span id="grabText">เลือกวัตถุก่อน แล้วกดยกวัตถุ</span></span>
+      <span class="seg" role="group" aria-label="โหมดยกวัตถุ">
+        <button type="button" id="grabModeMove" aria-pressed="true">✋ ย้าย</button>
+        <button type="button" id="grabModeCopy" aria-pressed="false">⧉ คัดลอก</button>
+      </span>
+      <button type="button" class="tbtn grab" id="grabStart" disabled>🧲 ยกวัตถุขึ้นมา</button>
+      <span id="grabPre" class="tgroup">
+        <span class="tlabel">ขอบนุ่ม</span>
+        <input type="range" id="grabFeather" min="0" max="6" value="1" style="width:80px"><output id="grabFeatherOut">1 px</output>
+        <span class="tlabel" id="grabExpandLbl">ขยายพื้นที่ลบ</span>
+        <input type="range" id="grabExpand" min="0" max="30" value="8" style="width:80px"><output id="grabExpandOut">8 px</output>
+      </span>
+      <span id="grabTools" class="tgroup hidden">
+        <span class="tlabel">ขนาด</span>
+        <input type="range" id="grabScale" min="20" max="300" value="100" style="width:90px"><output id="grabScaleOut">100%</output>
+        <span class="tlabel">หมุน</span>
+        <input type="range" id="grabAngle" min="-180" max="180" value="0" style="width:90px"><output id="grabAngleOut">0°</output>
+        <button type="button" class="tbtn" id="grabFlip">↔️ พลิก</button>
+        <button type="button" class="tbtn" id="grabReset">↺ ขนาดเดิม</button>
+        <button type="button" class="tbtn" id="grabCancel">✕ ยกเลิก</button>
+        <button type="button" class="tbtn grab" id="grabApply">✔️ วางลง</button>
+      </span>
+    </div>
+
+    <!-- ➰ Lasso -->
+    <div class="tgroup hidden" id="lassoOpts">
+      <span class="seg" role="group" aria-label="โหมด Lasso">
+        <button type="button" id="lassoAdd" aria-pressed="true">＋ เพิ่มพื้นที่</button>
+        <button type="button" id="lassoSub" aria-pressed="false">－ ตัดพื้นที่</button>
+      </span>
+      <span class="hint">กดค้างแล้วลากล้อมรอบวัตถุ · Alt ค้าง = ตัดพื้นที่</span>
+    </div>
+
+    <!-- 🪄 Magic -->
+    <div class="tgroup hidden" id="magicOpts">
+      <span class="seg" role="group" aria-label="โหมด Magic">
+        <button type="button" id="magicAdd" aria-pressed="true">＋ เพิ่ม</button>
+        <button type="button" id="magicSub" aria-pressed="false">－ ตัด</button>
+      </span>
+      <span class="tlabel">ความไวสี</span>
+      <input type="range" id="tol" min="1" max="150" value="32" style="width:90px"><output id="tolOut">32</output>
+      <span class="tlabel">ขยายขอบ</span>
+      <input type="range" id="grow" min="0" max="20" value="3" style="width:80px"><output id="growOut">3 px</output>
+      <label class="check"><input type="checkbox" id="contig" checked> เฉพาะส่วนที่ติดกัน</label>
+      <label class="check"><input type="checkbox" id="holes" checked> เติมช่องว่างข้างใน</label>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tgroup">
+      <span class="tlabel">คุณภาพการลบ</span>
+      <span class="seg" role="group" id="qualityGroup">
+        <button type="button" data-q="fast" aria-pressed="false">เร็ว</button>
+        <button type="button" data-q="balanced" aria-pressed="true">สมดุล</button>
+        <button type="button" data-q="best" aria-pressed="false">ละเอียด</button>
+      </span>
+    </div>
+  </div>
+
+  <!-- ===== พื้นที่ภาพ ===== -->
+  <div class="canvas-box" id="box">
+    <div class="scroller hidden" id="scroller">
+      <div class="layers tool-brush" id="layers">
+        <canvas id="imgCanvas"></canvas>
+        <canvas id="maskCanvas" aria-label="เลือกพื้นที่ที่ต้องการลบ"></canvas>
+        <svg id="lassoSvg" class="hidden" preserveAspectRatio="none" aria-hidden="true"><polyline class="l1"/><polyline class="l2"/></svg>
+        <div id="cursor"></div>
+      </div>
+    </div>
+    <div class="zoombar hidden" id="zoombar" role="group" aria-label="ย่อขยายภาพ">
+      <button type="button" id="zoomOut" title="ย่อ (Ctrl + −)" aria-label="ย่อภาพ">−</button>
+      <button type="button" id="zoomPct" title="คลิกเพื่อดูขนาดจริง 100%">100%</button>
+      <button type="button" id="zoomIn" title="ขยาย (Ctrl + +)" aria-label="ขยายภาพ">+</button>
+      <span class="sep"></span>
+      <button type="button" id="zoomFit" title="พอดีกรอบ (0)">⤢ พอดีจอ</button>
+    </div>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="เลือกภาพ">
+      <div style="font-size:2.3rem">🖼️</div>
+      <strong>ลากภาพมาวาง หรือคลิกเพื่อเลือก</strong>
+      <small>รองรับ JPG, PNG, WebP · วางจากคลิปบอร์ดด้วย Ctrl+V ได้</small>
+      <button class="btn" id="demoBtn" type="button">ลองกับภาพตัวอย่าง</button>
+    </div>
+    <div class="busy hidden" id="busy" role="status" aria-live="polite">
+      <strong id="busyText">กำลังลบวัตถุ…</strong>
+      <div class="bar"><i id="barFill"></i></div>
+      <small id="busyPct">0%</small>
+    </div>
+  </div>
+
+  <!-- ===== แถบล่าง: สถานะ + ปุ่มทำงาน ===== -->
+  <div class="bottombar">
+    <span class="stat" id="info">ยังไม่มีภาพ</span>
+    <span class="stat" id="timeInfo"></span>
+    <div class="spacer"></div>
+    <button class="tbtn" id="undoBtn" type="button" disabled title="ย้อนกลับ (Ctrl+Z)">↶ ย้อนกลับ</button>
+    <button class="tbtn" id="redoBtn" type="button" disabled title="ทำซ้ำ (Ctrl+Y)">↷ ทำซ้ำ</button>
+    <button class="tbtn" id="clearBtn" type="button" disabled>ล้างที่เลือก</button>
+    <button class="tbtn" id="peekBtn" type="button" disabled title="กดค้างเพื่อดูภาพต้นฉบับ">👁️ ดูต้นฉบับ</button>
+    <span class="pop-wrap">
+      <button class="tbtn cut" id="cutBtn" type="button" disabled>🪄 ลบพื้นหลัง</button>
+      <button class="tbtn" id="cutOptBtn" type="button" title="ตัวเลือกลบพื้นหลัง">▾</button>
+      <div class="pop hidden" id="cutPop">
+        <label class="lbl" for="cutFill">พื้นหลังใหม่</label>
+        <select id="cutFill">
+          <option value="none">โปร่งใส — บันทึกเป็น PNG</option>
+          <option value="#FFFFFF">ขาว — รูปติดบัตรราชการ</option>
+          <option value="#C7DFF5">ฟ้าอ่อน — รูปติดบัตรทั่วไป</option>
+          <option value="#D64545">แดง</option>
+          <option value="custom">เลือกสีเอง…</option>
+        </select>
+        <div id="cutColorWrap" class="hidden">
+          <label class="lbl" for="cutColor">สีที่เลือกเอง</label>
+          <input type="color" id="cutColor" value="#0E8C93" style="width:100%;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--panel)">
+        </div>
+        <label class="lbl" for="cutFeather">ความนุ่มของขอบ</label>
+        <div class="range"><input type="range" id="cutFeather" min="0" max="12" value="2"><output id="cutFeatherOut">2 px</output></div>
+        <p class="hint" style="margin:6px 0 0">เลือก “สิ่งที่ต้องการเก็บ” ด้วย 🤖 AI แล้วกดปุ่มนี้</p>
+      </div>
+    </span>
+    <button class="tbtn" id="savePng" type="button" disabled>💾 PNG</button>
+    <button class="tbtn" id="saveJpg" type="button" disabled>💾 JPG</button>
+    <button class="tbtn" id="newBtn" type="button">📂 เปลี่ยนภาพ</button>
+    <button class="btn primary" id="runBtn" type="button" disabled>✨ ลบวัตถุ</button>
+  </div>
+  <input type="file" id="file" accept="image/*" hidden>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -716,6 +740,7 @@ body.embed .panel{position:static}
     zoom: 1, fitMode: true, magicSub: false, tol: 32, grow: 3, contig: true, holes: true,
     spaceHeld: false, pan: null,
     lassoSub: false, lasso: null, aiSub: false, aiGrow: 6, aiBox: false, box: null,
+    grab: null, grabFeather: 1, grabCopy: false, grabExpand: 8, redo: [], clip: null,
     cutFill: 'none', cutFeather: 2,
     imgVer: 0,              // เพิ่มทุกครั้งที่ภาพเปลี่ยน (ให้ AI รู้ว่าต้องวิเคราะห์ภาพใหม่)
   };
@@ -766,17 +791,24 @@ body.embed .panel{position:static}
               'ปรับ <b>ขนาดหัวแปรง</b> ให้เหมาะกับจุดที่จะเก็บ',
               'เสร็จแล้วกลับไป <b>🖌️ ระบาย</b> (<kbd>B</kbd>) เพื่อเลือกต่อ'],
       tip: 'อยากล้างที่เลือกทั้งหมด กด <b>ล้างที่เลือก</b> ทีเดียวเร็วกว่า' },
+    grab: { now: '🧲 ย้ายวัตถุ — ยกของในภาพมาวางใหม่',
+      steps: ['เลือก <b>✋ ย้าย</b> (ยกของเดิมไป) หรือ <b>⧉ คัดลอก</b> (เก็บของเดิมไว้ ใช้ปะทับรอย)',
+              'เลือกวัตถุด้วย <b>🤖 AI</b> (แม่นสุด) หรือ 🪄 Magic / ➰ Lasso / 🖌️ ระบาย',
+              'กด <b>🧲 ยกวัตถุขึ้นมา</b> — โหมดย้ายจะเติมพื้นหลังที่เดิมให้อัตโนมัติ',
+              'ลากย้าย · ลากจุดมุมย่อ/ขยาย · แถบหมุน/พลิก · แล้วกด <b>✔️ วางลง</b>'],
+      tip: 'ปุ่มลูกศร ⬅️➡️⬆️⬇️ ขยับวัตถุทีละ 1 px (Shift = 10 px · Alt+ลูกศร = หมุน · Ctrl+ลูกศร = ย่อ/ขยาย) · พื้นหลังลายซับซ้อน ใช้ ⧉ คัดลอก ปะทับรอยจะเนียนกว่า · เงาค้างที่เดิม เพิ่ม “ขยายพื้นที่ลบ”' },
     hand: { now: '✋ เลื่อน — ดูส่วนอื่นของภาพ',
       steps: ['ใช้ปุ่ม <b>−</b> <b>+</b> มุมขวาล่างซูมเข้า-ออก',
               'กดค้างแล้วลากเพื่อเลื่อนดูส่วนอื่นของภาพ',
               'กด <b>⤢ พอดีจอ</b> เพื่อกลับมาเห็นภาพทั้งใบ'],
-      tip: 'บนคอมไม่ต้องสลับเครื่องมือ กด <kbd>Space</kbd> ค้างแล้วลากได้เลย · <kbd>Ctrl</kbd>+ล้อเมาส์ = ซูม' },
+      tip: 'บนคอมไม่ต้องสลับเครื่องมือ กด <kbd>Space</kbd> ค้างแล้วลากได้เลย · <kbd>Ctrl</kbd>+ล้อเมาส์ = ซูม · ปุ่มลูกศรเลื่อนดูภาพได้เมื่อซูมอยู่ (Shift = เลื่อนไกลขึ้น)' },
   };
+  const KEYS = '⌨️ Del ลบสิ่งที่เลือก · Ctrl+C คัดลอก · Ctrl+V วาง · Ctrl+Z ย้อน · Ctrl+Y ทำซ้ำ · Ctrl+D ล้างที่เลือก · Ctrl+S บันทึก · F เต็มจอ';
   function drawHelp() {
     const h = HELP[state.tool] || HELP.brush;
     $('helpNow').textContent = h.now;
-    $('helpSteps').innerHTML = h.steps.map(t => '<li>' + t + '</li>').join('');
-    $('helpTip').innerHTML = '💡 ' + h.tip;
+        $('helpSteps').innerHTML = h.steps.map((t, i) => `<span class="step">${i + 1}. ${t}</span>`).join('');
+    $('helpTip').innerHTML = '💡 ' + h.tip + '<br>' + KEYS;
   }
   const HELP_KEY = 'eraser_help_open';
   function setHelpOpen(open) {
@@ -792,9 +824,13 @@ body.embed .panel{position:static}
     $('runBtn').disabled = !L || B || !state.hasMask;
     $('clearBtn').disabled = !L || B || !state.hasMask;
     $('undoBtn').disabled = !L || B || !state.history.length;
+    $('redoBtn').disabled = !L || B || !state.redo.length || !!state.grab;
     $('peekBtn').disabled = !L || B || !state.history.some(h => h.type === 'image');
     $('savePng').disabled = $('saveJpg').disabled = !L || B;
-    $('cutBtn').disabled = !L || B || !state.hasMask;
+    $('fsBtn').disabled = B;
+    $('cutBtn').disabled = !L || B || !state.hasMask || !!state.grab;
+    $('grabStart').disabled = !L || B || !state.hasMask || !!state.grab;
+    $('runBtn').disabled = $('runBtn').disabled || !!state.grab;
     $('newBtn').disabled = B;
     ['zoomOut', 'zoomIn', 'zoomFit', 'zoomPct'].forEach(id => $(id).disabled = !L);
     if (L) { $('zoomOut').disabled = state.zoom <= ZMIN + 1e-6; $('zoomIn').disabled = state.zoom >= ZMAX - 1e-6; }
@@ -820,12 +856,31 @@ body.embed .panel{position:static}
   }
   function pushHistory(entry) {
     state.history.push(entry);
+    state.redo = [];                                   // ทำสิ่งใหม่แล้ว ประวัติ "ทำซ้ำ" เดิมใช้ไม่ได้
     while (state.history.length > histLimit()) state.history.shift();
   }
+  /* ถ่ายภาพสถานะปัจจุบันไว้ เพื่อให้ย้อนกลับ/ทำซ้ำ สลับไปมาได้ */
+  const snapshotNow = type => type === 'image'
+    ? { type: 'image', img: ictx.getImageData(0, 0, imgC.width, imgC.height), alpha: maskAlpha() }
+    : { type: 'mask', alpha: maskAlpha() };
+  function applyEntry(h) {
+    if (h.type === 'image') { ictx.putImageData(h.img, 0, 0); setMaskAlpha(h.alpha); state.imgVer++; }
+    else setMaskAlpha(h.alpha);
+    state.hasMask = maskHasPixels(); refresh();
+  }
   const pushMaskHistory = () => pushHistory({ type: 'mask', alpha: maskAlpha() });
+  function redoAction() {
+    if (state.busy || !state.redo.length || state.grab) return;
+    const r = state.redo.pop();
+    state.history.push(snapshotNow(r.type));
+    applyEntry(r);
+    toast(r.type === 'image' ? 'ทำซ้ำการแก้ไขแล้ว' : 'ทำซ้ำการเลือกพื้นที่แล้ว');
+  }
   function undo() {
     if (state.busy || !state.history.length) return;
     const h = state.history.pop();
+    state.redo.push(snapshotNow(h.type));
+    if (state.redo.length > histLimit()) state.redo.shift();
     if (h.type === 'image') { ictx.putImageData(h.img, 0, 0); setMaskAlpha(h.alpha); state.imgVer++; toast('ย้อนการลบแล้ว'); }
     else { setMaskAlpha(h.alpha); toast('ย้อนการเลือกพื้นที่แล้ว'); }
     state.hasMask = maskHasPixels(); refresh();
@@ -1452,6 +1507,7 @@ self.onmessage = async e => {
     if (panning(e)) { e.preventDefault(); maskC.setPointerCapture(e.pointerId); startPan(e); return; }
     if (e.button !== 0) return;
     if (state.tool === 'magic') { const p = pos(e); magicSelect(p.x, p.y, state.magicSub || e.altKey); return; }
+    if (state.grab) { if (grabDown(e)) return; }
     if (state.tool === 'ai') {
       if (state.aiBox) { maskC.setPointerCapture(e.pointerId); boxStart(e); }
       else aiRun({ point: pos(e), ev: e });
@@ -1468,6 +1524,7 @@ self.onmessage = async e => {
       scroller.scrollTop = state.pan.st - (e.clientY - state.pan.y);
       return;
     }
+    if (state.grab && state.grab.drag) { grabMove(e); return; }
     if (state.box) { boxMove(e); return; }
     if (state.lasso) { lassoMove(e); return; }
     if (state.tool === 'brush' || state.tool === 'erase') { if (!state.spaceHeld) moveCursor(e); }
@@ -1476,6 +1533,7 @@ self.onmessage = async e => {
   });
   const endStroke = () => {
     if (state.pan) { state.pan = null; layers.classList.remove('panning'); return; }
+    if (state.grab && state.grab.drag) { grabUp(); return; }
     if (state.box) { boxEnd(); return; }
     if (state.lasso) { lassoEnd(); return; }
     if (!state.drawing) return;
@@ -1636,6 +1694,249 @@ self.onmessage = async e => {
     toast(fill === 'none' ? '🪄 เก็บเฉพาะที่เลือก — บันทึกเป็น PNG เพื่อคงความโปร่งใส' : '🪄 เปลี่ยนพื้นหลังแล้ว');
   }
 
+  /* =========================================================
+     🧲 Magic Grab — ยกวัตถุที่เลือกขึ้นมาเป็นชิ้นลอย ย้าย/ย่อขยาย/หมุนได้
+     พื้นที่เดิมเติมพื้นหลังด้วยตัวเติมภาพเดิม (PatchMatch)
+     ========================================================= */
+  const HANDLE = 14;                          // ขนาดจุดจับ (พิกเซลบนจอ)
+  function grabSetStatus(text, kind) {
+    $('grabStatus').className = 'ai-status ' + (kind || '');
+    $('grabText').textContent = text;
+  }
+  /* ตัดวัตถุตามพื้นที่ที่เลือก ออกมาเป็นแคนวาสใบใหม่ (พร้อมขอบนุ่ม) */
+  function extractLayer() {
+    const W = maskC.width, H = maskC.height;
+    const md = mctx.getImageData(0, 0, W, H).data;
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (md[(y * W + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (x1 < 0) return null;
+    const pad = Math.max(2, state.grabFeather * 2);
+    x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad);
+    x1 = Math.min(W - 1, x1 + pad); y1 = Math.min(H - 1, y1 + pad);
+    const w = x1 - x0 + 1, h = y1 - y0 + 1;
+    const lay = document.createElement('canvas'); lay.width = w; lay.height = h;
+    const lx = lay.getContext('2d', { willReadFrequently: true });
+    lx.drawImage(imgC, x0, y0, w, h, 0, 0, w, h);
+    const mk = document.createElement('canvas'); mk.width = w; mk.height = h;
+    const mx = mk.getContext('2d');
+    if (state.grabFeather > 0) mx.filter = `blur(${state.grabFeather}px)`;
+    mx.drawImage(maskC, x0, y0, w, h, 0, 0, w, h);
+    lx.globalCompositeOperation = 'destination-in';
+    lx.drawImage(mk, 0, 0);
+    return { canvas: lay, x0, y0, w, h };
+  }
+  /* ขยายพื้นที่ที่เลือกบนเลเยอร์ mask (กันเงา/ขอบวัตถุค้างอยู่ที่เดิม) */
+  function expandMask(px) {
+    if (px <= 0) return;
+    const W = maskC.width, H = maskC.height;
+    const d = mctx.getImageData(0, 0, W, H).data;
+    const m = new Uint8Array(W * H);
+    for (let i = 0; i < W * H; i++) m[i] = d[i * 4 + 3] > 8 ? 1 : 0;
+    setMaskAlphaFrom(dilate(m, W, H, px));
+  }
+  function setMaskAlphaFrom(sel) {
+    const W = maskC.width, H = maskC.height, { r, g, b } = maskColor();
+    const id = mctx.createImageData(W, H), o = id.data;
+    for (let i = 0; i < W * H; i++) if (sel[i]) { const j = i * 4; o[j] = r; o[j + 1] = g; o[j + 2] = b; o[j + 3] = 255; }
+    mctx.putImageData(id, 0, 0);
+  }
+  async function grabStart() {
+    if (state.busy || !state.hasMask || state.grab) return;
+    const cut = extractLayer();                    // ตัดวัตถุด้วยขอบเดิม (ไม่ขยาย) เพื่อไม่ให้ติดพื้นหลังมาด้วย
+    if (!cut) { toast('ยังไม่ได้เลือกวัตถุ', true); return; }
+    const before = ictx.getImageData(0, 0, imgC.width, imgC.height);
+    const alphaBefore = maskAlpha();
+    if (state.grabCopy) {
+      // โหมดคัดลอก: ไม่ลบของเดิม แค่คัดลอกขึ้นมาเป็นชิ้นลอย
+      mctx.clearRect(0, 0, maskC.width, maskC.height);
+      state.hasMask = false;
+    } else {
+      grabSetStatus('กำลังเติมพื้นหลังที่เดิม…', 'working');
+      expandMask(state.grabExpand);                // กินเงา/ขอบรอบวัตถุไปด้วย
+      await run();                                 // เติมพื้นหลังตรงที่ยกวัตถุออก (ล้าง mask ให้ด้วย)
+      if (state.history.length && state.history[state.history.length - 1].type === 'image') state.history.pop();  // รวมเป็นขั้นตอนเดียว
+    }
+    state.grab = {
+      ...cut, before, alphaBefore,
+      base: ictx.getImageData(0, 0, imgC.width, imgC.height),
+      cx: cut.x0 + cut.w / 2, cy: cut.y0 + cut.h / 2, scale: 1, angle: 0, flip: 1, drag: null,
+    };
+    layers.classList.add('grabbing');
+    $('grabTools').classList.remove('hidden'); $('grabPre').classList.add('hidden');
+    $('grabStart').classList.add('hidden');
+    $('grabScale').value = 100; $('grabScaleOut').textContent = '100%';
+    $('grabAngle').value = 0; $('grabAngleOut').textContent = '0°';
+    grabSetStatus(state.grabCopy
+      ? 'โหมดคัดลอก — ลากไปวางตรงที่ต้องการ กด ✔️ วางลง (วางซ้ำได้หลายครั้ง) เสร็จแล้วกด ✕'
+      : 'ลากตัววัตถุเพื่อย้าย · ลากมุมกล่องเพื่อย่อ/ขยาย · เสร็จแล้วกด ✔️ วางลง', 'ready');
+    setTool('grab');
+    renderGrab();
+    refresh();
+  }
+  /* วาดภาพพื้นหลัง + วัตถุตามค่าปัจจุบัน แล้ววาดกล่องควบคุมบนเลเยอร์ที่เลือก */
+  function renderGrab() {
+    const g = state.grab; if (!g) return;
+    const W = imgC.width, H = imgC.height;
+    ictx.putImageData(g.base, 0, 0);
+    const w = g.w * g.scale, h = g.h * g.scale;
+    ictx.save();
+    ictx.translate(g.cx, g.cy);
+    ictx.rotate(g.angle * Math.PI / 180);
+    ictx.scale(g.flip, 1);
+    ictx.imageSmoothingQuality = 'high';
+    ictx.drawImage(g.canvas, -w / 2, -h / 2, w, h);
+    ictx.restore();
+    // กล่องควบคุม
+    const s = scale();                                  // px ภาพ ต่อ px จอ
+    mctx.clearRect(0, 0, W, H);
+    mctx.save();
+    mctx.translate(g.cx, g.cy); mctx.rotate(g.angle * Math.PI / 180);
+    mctx.strokeStyle = '#19C27E'; mctx.lineWidth = 2 * s; mctx.setLineDash([7 * s, 5 * s]);
+    mctx.strokeRect(-w / 2, -h / 2, w, h);
+    mctx.setLineDash([]);
+    mctx.fillStyle = '#fff'; mctx.strokeStyle = '#19C27E'; mctx.lineWidth = 2 * s;
+    const r = HANDLE * s / 2;
+    [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sx, sy]) => {
+      mctx.beginPath(); mctx.arc(sx * w / 2, sy * h / 2, r, 0, 7); mctx.fill(); mctx.stroke();
+    });
+    mctx.restore();
+  }
+  const grabCorners = () => {
+    const g = state.grab, w = g.w * g.scale, h = g.h * g.scale, a = g.angle * Math.PI / 180;
+    return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => ({
+      x: g.cx + (sx * w / 2) * Math.cos(a) - (sy * h / 2) * Math.sin(a),
+      y: g.cy + (sx * w / 2) * Math.sin(a) + (sy * h / 2) * Math.cos(a),
+    }));
+  };
+  const insideGrab = p => {
+    const g = state.grab, a = -g.angle * Math.PI / 180;
+    const dx = p.x - g.cx, dy = p.y - g.cy;
+    const rx = dx * Math.cos(a) - dy * Math.sin(a), ry = dx * Math.sin(a) + dy * Math.cos(a);
+    return Math.abs(rx) <= g.w * g.scale / 2 && Math.abs(ry) <= g.h * g.scale / 2;
+  };
+  function grabDown(e) {
+    const g = state.grab; if (!g) return false;
+    const p = pos(e), s = scale(), hit = HANDLE * s;
+    const cs = grabCorners();
+    for (let i = 0; i < 4; i++) {
+      if (Math.hypot(cs[i].x - p.x, cs[i].y - p.y) < hit) {
+        g.drag = { type: 'scale', d0: Math.hypot(p.x - g.cx, p.y - g.cy), s0: g.scale };
+        maskC.setPointerCapture(e.pointerId); return true;
+      }
+    }
+    if (insideGrab(p)) {
+      g.drag = { type: 'move', px: p.x, py: p.y, cx: g.cx, cy: g.cy };
+      maskC.setPointerCapture(e.pointerId); return true;
+    }
+    return false;
+  }
+  function grabMove(e) {
+    const g = state.grab; if (!g || !g.drag) return;
+    const p = pos(e);
+    if (g.drag.type === 'move') { g.cx = g.drag.cx + (p.x - g.drag.px); g.cy = g.drag.cy + (p.y - g.drag.py); }
+    else {
+      const d = Math.hypot(p.x - g.cx, p.y - g.cy);
+      g.scale = Math.max(0.2, Math.min(3, g.drag.s0 * (d / (g.drag.d0 || 1))));
+      $('grabScale').value = Math.round(g.scale * 100); $('grabScaleOut').textContent = Math.round(g.scale * 100) + '%';
+    }
+    renderGrab();
+  }
+  const grabUp = () => { if (state.grab) state.grab.drag = null; };
+  function grabEnd(apply) {
+    const g = state.grab; if (!g) return;
+    if (apply) {
+      renderGrab();
+      mctx.clearRect(0, 0, maskC.width, maskC.height);
+      const merged = ictx.getImageData(0, 0, imgC.width, imgC.height);
+      ictx.putImageData(merged, 0, 0);
+      pushHistory({ type: 'image', img: g.before, alpha: g.alphaBefore });
+      state.imgVer++;
+      if (state.grabCopy) {                        // คัดลอก: วางแล้วยังถือชิ้นเดิมไว้ วางซ้ำได้อีก
+        g.before = merged;
+        g.alphaBefore = maskAlpha();
+        g.base = ictx.getImageData(0, 0, imgC.width, imgC.height);
+        g.cx += 12; g.cy += 12;                    // เลื่อนนิดหน่อยให้เห็นว่าเป็นชิ้นใหม่
+        renderGrab();
+        toast('วางสำเนาแล้ว ✔️ ลากไปวางซ้ำได้อีก · กด ✕ เมื่อเสร็จ');
+        refresh();
+        return;
+      }
+      toast('วางวัตถุแล้ว ✔️');
+    } else {
+      ictx.putImageData(g.before, 0, 0);
+      setMaskAlpha(g.alphaBefore);
+      toast(state.grabCopy ? 'จบโหมดคัดลอก' : 'ยกเลิกการย้ายแล้ว');
+    }
+    state.grab = null;
+    layers.classList.remove('grabbing');
+    mctx.clearRect(0, 0, maskC.width, maskC.height);
+    if (!apply) setMaskAlpha(g.alphaBefore);
+    state.hasMask = maskHasPixels();
+    $('grabTools').classList.add('hidden'); $('grabPre').classList.remove('hidden');
+    $('grabStart').classList.remove('hidden');
+    grabSetStatus('เลือกวัตถุก่อน แล้วกดยกวัตถุ');
+    refresh();
+  }
+
+  /* =========================================================
+     คลิปบอร์ดในตัว — Ctrl+C คัดลอกสิ่งที่เลือก · Ctrl+V วางเป็นชิ้นลอย
+     ========================================================= */
+  function copySelection() {
+    if (state.busy || state.grab) { toast('วางชิ้นที่ถืออยู่ให้เสร็จก่อนนะคะ', true); return; }
+    if (!state.hasMask) { toast('เลือกพื้นที่ที่จะคัดลอกก่อน', true); return; }
+    const cut = extractLayer();
+    if (!cut) { toast('คัดลอกไม่สำเร็จ', true); return; }
+    state.clip = cut;
+    toast('คัดลอกแล้ว 📋 กด Ctrl+V เพื่อวางเป็นชิ้นลอย');
+  }
+  function pasteClip() {
+    if (state.busy || !state.loaded) return;
+    if (state.grab) { grabEnd(true); return; }          // ถือชิ้นอยู่แล้ว = วางลงเลย
+    if (!state.clip) { toast('ยังไม่มีอะไรในคลิปบอร์ด — เลือกพื้นที่แล้วกด Ctrl+C ก่อน', true); return; }
+    const c = state.clip;
+    state.grab = {
+      canvas: c.canvas, x0: c.x0, y0: c.y0, w: c.w, h: c.h,
+      before: ictx.getImageData(0, 0, imgC.width, imgC.height),
+      alphaBefore: maskAlpha(),
+      base: ictx.getImageData(0, 0, imgC.width, imgC.height),
+      cx: c.x0 + c.w / 2 + 16, cy: c.y0 + c.h / 2 + 16, scale: 1, angle: 0, flip: 1, drag: null, pasted: true,
+    };
+    layers.classList.add('grabbing');
+    $('grabTools').classList.remove('hidden'); $('grabPre').classList.add('hidden');
+    $('grabStart').classList.add('hidden');
+    $('grabScale').value = 100; $('grabScaleOut').textContent = '100%';
+    $('grabAngle').value = 0; $('grabAngleOut').textContent = '0°';
+    setTool('grab');
+    grabSetStatus('วางชิ้นที่คัดลอกมา — ลากหรือใช้ลูกศรจัดตำแหน่ง แล้วกด ✔️ วางลง (Ctrl+V ก็ได้)', 'ready');
+    renderGrab(); refresh();
+    toast('วางชิ้นที่คัดลอกแล้ว 📋 จัดตำแหน่งแล้วกด ✔️ วางลง');
+  }
+  /* Delete — ลบสิ่งที่เลือก หรือทิ้งชิ้นที่ถืออยู่ */
+  function deleteAction() {
+    if (state.busy) return;
+    if (state.grab) {
+      const g = state.grab;
+      state.grab = null;
+      layers.classList.remove('grabbing');
+      mctx.clearRect(0, 0, maskC.width, maskC.height);
+      if (state.grabCopy || g.pasted) { ictx.putImageData(g.before, 0, 0); toast('ทิ้งชิ้นที่คัดลอกแล้ว'); }
+      else {
+        ictx.putImageData(g.base, 0, 0);                 // พื้นหลังที่เติมไว้แล้ว = ลบวัตถุทิ้งเลย
+        pushHistory({ type: 'image', img: g.before, alpha: g.alphaBefore });
+        state.imgVer++;
+        toast('ลบวัตถุที่ยกไว้แล้ว 🗑️');
+      }
+      $('grabTools').classList.add('hidden'); $('grabPre').classList.remove('hidden');
+      $('grabStart').classList.remove('hidden');
+      state.hasMask = maskHasPixels(); refresh();
+      return;
+    }
+    if (state.hasMask) { run(); return; }                // มีพื้นที่เลือก = ลบวัตถุ
+    toast('ยังไม่ได้เลือกอะไรไว้', true);
+  }
+
   /* ---------- ดูต้นฉบับ ---------- */
   let peekData = null;
   function peek(on) {
@@ -1691,6 +1992,7 @@ self.onmessage = async e => {
     $('magicOpts').classList.toggle('hidden', t !== 'magic');
     $('aiOpts').classList.toggle('hidden', t !== 'ai');
     $('lassoOpts').classList.toggle('hidden', t !== 'lasso');
+    $('grabOpts').classList.toggle('hidden', t !== 'grab');
     $('cursor').style.display = 'none';
     drawHelp();
   }
@@ -1734,6 +2036,56 @@ self.onmessage = async e => {
   }
   $('helpToggle').onclick = () => setHelpOpen($('helpBox').classList.contains('collapsed'));
   $('cutBtn').onclick = cutout;
+  $('cutOptBtn').onclick = e => { e.stopPropagation(); $('cutPop').classList.toggle('hidden'); };
+  document.addEventListener('pointerdown', e => { if (!e.target.closest('.pop-wrap')) $('cutPop').classList.add('hidden'); });
+
+  /* ---------- โหมดเต็มจอ (ใช้ได้ทั้งหน้าเดี่ยวและในกรอบ DocDesk) ---------- */
+  function fsOn() { return !!document.fullscreenElement || document.body.classList.contains('expanded'); }
+  async function toggleFull() {
+    if (fsOn()) {
+      if (document.fullscreenElement) { try { await document.exitFullscreen(); } catch (e) {} }
+      document.body.classList.remove('expanded');
+      if (EMBED) { toParent({ type: 'expand', on: false }); setTimeout(() => window.__postHeight && window.__postHeight(true), 150); }
+    } else {
+      let ok = false;
+      try { await $('app').requestFullscreen(); ok = true; } catch (e) { ok = false; }
+      if (!ok) { document.body.classList.add('expanded'); if (EMBED) toParent({ type: 'expand', on: true }); }
+    }
+    setTimeout(() => { if (state.loaded) { state.fitMode ? zoomFit() : setZoom(state.zoom); } updateFsBtn(); }, 120);
+  }
+  const updateFsBtn = () => { $('fsBtn').textContent = fsOn() ? '⛶ ออกจากเต็มจอ' : '⛶ เต็มจอ'; };
+  $('fsBtn').onclick = toggleFull;
+  document.addEventListener('fullscreenchange', () => { updateFsBtn(); if (state.loaded && state.fitMode) setTimeout(zoomFit, 80); });
+  $('grabStart').onclick = grabStart;
+  $('grabApply').onclick = () => grabEnd(true);
+  $('grabCancel').onclick = () => grabEnd(false);
+  $('grabFlip').onclick = () => { if (state.grab) { state.grab.flip *= -1; renderGrab(); } };
+  $('grabReset').onclick = () => {
+    if (!state.grab) return;
+    state.grab.scale = 1; state.grab.angle = 0;
+    $('grabScale').value = 100; $('grabScaleOut').textContent = '100%';
+    $('grabAngle').value = 0; $('grabAngleOut').textContent = '0°';
+    renderGrab();
+  };
+  $('grabScale').oninput = e => { if (state.grab) { state.grab.scale = +e.target.value / 100; $('grabScaleOut').textContent = e.target.value + '%'; renderGrab(); } };
+  $('grabAngle').oninput = e => { if (state.grab) { state.grab.angle = +e.target.value; $('grabAngleOut').textContent = e.target.value + '°'; renderGrab(); } };
+  $('grabFeather').oninput = e => { state.grabFeather = +e.target.value; $('grabFeatherOut').textContent = state.grabFeather + ' px'; };
+  $('grabExpand').oninput = e => { state.grabExpand = +e.target.value; $('grabExpandOut').textContent = state.grabExpand + ' px'; };
+  function setGrabCopy(v) {
+    state.grabCopy = v;
+    $('grabModeMove').setAttribute('aria-pressed', !v);
+    $('grabModeCopy').setAttribute('aria-pressed', v);
+    // ขยายพื้นที่ลบใช้เฉพาะตอนย้าย (โหมดคัดลอกไม่ได้ลบของเดิม)
+    $('grabExpandLbl').classList.toggle('hidden', v);
+    $('grabExpand').classList.toggle('hidden', v);
+    $('grabExpandOut').classList.toggle('hidden', v);
+    $('grabStart').textContent = v ? '⧉ คัดลอกวัตถุ' : '🧲 ยกวัตถุขึ้นมา';
+    $('grabCancel').textContent = v ? '✕ เสร็จ' : '✕ ยกเลิก';
+    grabSetStatus(v ? 'เลือกพื้นที่ที่จะคัดลอก (เช่น พื้นหลังสะอาดข้างๆ) แล้วกดคัดลอกวัตถุ'
+                    : 'เลือกวัตถุก่อน แล้วกดยกวัตถุ');
+  }
+  $('grabModeMove').onclick = () => setGrabCopy(false);
+  $('grabModeCopy').onclick = () => setGrabCopy(true);
   $('cutFill').onchange = e => { state.cutFill = e.target.value; $('cutColorWrap').classList.toggle('hidden', e.target.value !== 'custom'); };
   $('cutColor').oninput = () => { if (state.cutFill === 'custom') state.cutFill = 'custom'; };
   $('cutFeather').oninput = e => { state.cutFeather = +e.target.value; $('cutFeatherOut').textContent = state.cutFeather + ' px'; };
@@ -1745,6 +2097,7 @@ self.onmessage = async e => {
   });
   $('runBtn').onclick = run;
   $('undoBtn').onclick = undo;
+  $('redoBtn').onclick = redoAction;
   $('clearBtn').onclick = () => {
     if (!state.hasMask) return;
     pushMaskHistory(); mctx.clearRect(0, 0, maskC.width, maskC.height); state.hasMask = false; refresh();
@@ -1777,10 +2130,57 @@ self.onmessage = async e => {
     if (it) loadFile(it.getAsFile());
   });
 
+  /* =========================================================
+     ปุ่มลูกศร — ทำงานตามสถานการณ์
+     กำลังย้าย/คัดลอกวัตถุ → ขยับวัตถุ (Shift = ทีละ 10 px, Alt = หมุน, Ctrl = ย่อ/ขยาย)
+     ไม่ได้ยกวัตถุ → เลื่อนดูภาพ (เมื่อซูมอยู่)
+     ========================================================= */
+  function arrowKey(e) {
+    const dx = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
+    const dy = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
+    if (!dx && !dy) return false;
+    const g = state.grab;
+    if (g) {
+      e.preventDefault();
+      if (e.ctrlKey || e.metaKey) {                     // ย่อ/ขยายทีละ 2%
+        g.scale = Math.max(0.2, Math.min(3, g.scale + (dy ? -dy : dx) * 0.02));
+        $('grabScale').value = Math.round(g.scale * 100); $('grabScaleOut').textContent = Math.round(g.scale * 100) + '%';
+      } else if (e.altKey) {                            // หมุนทีละ 1° (Shift = 15°)
+        const step = e.shiftKey ? 15 : 1;
+        g.angle = Math.max(-180, Math.min(180, g.angle + (dx || dy) * step));
+        $('grabAngle').value = g.angle; $('grabAngleOut').textContent = g.angle + '°';
+      } else {                                          // ขยับตำแหน่ง
+        const step = e.shiftKey ? 10 : 1;
+        g.cx = Math.max(0, Math.min(imgC.width, g.cx + dx * step));
+        g.cy = Math.max(0, Math.min(imgC.height, g.cy + dy * step));
+      }
+      renderGrab();
+      return true;
+    }
+    if (state.loaded && scroller && !scroller.classList.contains('hidden')) {
+      const canPan = scroller.scrollWidth > scroller.clientWidth + 2 || scroller.scrollHeight > scroller.clientHeight + 2;
+      if (!canPan) return false;
+      e.preventDefault();
+      const step = e.shiftKey ? 160 : 40;
+      scroller.scrollLeft += dx * step; scroller.scrollTop += dy * step;
+      return true;
+    }
+    return false;
+  }
   window.addEventListener('keydown', e => {
     if (e.target.matches('input,select,textarea')) return;
+    if (arrowKey(e)) return;
     const mod = e.ctrlKey || e.metaKey;
-    if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+    const kk = (e.key || '').toLowerCase();
+    if (mod && kk === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+    if (mod && (kk === 'y' || (kk === 'z' && e.shiftKey))) { e.preventDefault(); redoAction(); return; }
+    if (mod && kk === 'c') { e.preventDefault(); copySelection(); return; }
+    if (mod && kk === 'v') { e.preventDefault(); pasteClip(); return; }
+    if (mod && kk === 'd') { e.preventDefault(); $('clearBtn').click(); return; }
+    if (mod && kk === 's') { e.preventDefault(); save('png'); return; }
+    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteAction(); return; }
+    if (e.key === 'Escape' && fsOn()) { toggleFull(); return; }
+    if (!mod && (e.key === 'f' || e.key === 'F')) { toggleFull(); return; }
     if (state.loaded && (e.key === '+' || e.key === '=')) { e.preventDefault(); zoomBy(ZSTEP); return; }
     if (state.loaded && (e.key === '-' || e.key === '_')) { e.preventDefault(); zoomBy(1 / ZSTEP); return; }
     if (mod) return;
@@ -1795,6 +2195,7 @@ self.onmessage = async e => {
     else if (k === 'w') setTool('magic');
     else if (k === 'a') setTool('ai');
     else if (k === 'l') setTool('lasso');
+    else if (k === 'g') setTool('grab');
     else if (k === 'e') setTool('erase');
     else if (k === 'h') setTool('hand');
     else if (e.key === '[') setSize(state.size - 4);
@@ -1815,9 +2216,13 @@ self.onmessage = async e => {
   try { helpOpen = localStorage.getItem(HELP_KEY) !== '0'; } catch (e) {}
   setHelpOpen(helpOpen);
   drawHelp();
+  setGrabCopy(false);
   refresh();
-  window.__eraserTest = { makeDemo, killWorker: () => { try { AI.worker && AI.worker.terminate(); } catch (e) {} }, state: () => ({ zoom: state.zoom, hist: state.history.map(h => h.type), hasMask: state.hasMask, ai: AI.status, aiMode: AI.mode, imgVer: state.imgVer, embVer: AI.embVer, boxNative: AI.boxNative }) };
+  window.__eraserTest = { makeDemo, killWorker: () => { try { AI.worker && AI.worker.terminate(); } catch (e) {} }, state: () => ({ zoom: state.zoom, hist: state.history.map(h => h.type), grabCopy: state.grabCopy, grabExpand: state.grabExpand, full: fsOn(), helpOpen: !$('helpBox').classList.contains('collapsed'), hasMask: state.hasMask, grab: state.grab ? { scale: +state.grab.scale.toFixed(2), angle: state.grab.angle, flip: state.grab.flip,
+      cx: Math.round(state.grab.cx), cy: Math.round(state.grab.cy) } : null,
+      ai: AI.status, aiMode: AI.mode, imgVer: state.imgVer, embVer: AI.embVer, boxNative: AI.boxNative }) };
 
+  const toParent = msg => { try { parent.postMessage({ src: 'docdesk-eraser', ...msg }, location.protocol === 'file:' ? '*' : location.origin); } catch (e) {} };
   /* =========================================================
      โหมดฝังใน DocDesk (eraser.html?embed=1)
      - รับรูปจาก DocDesk (รองรับ HEIC/TIFF ผ่านตัวแปลงของ DocDesk)
@@ -1826,7 +2231,6 @@ self.onmessage = async e => {
   if (EMBED) {
     document.body.classList.add('embed');
     const okOrigin = o => o === location.origin || (location.protocol === 'file:' && o === 'null');
-    const toParent = msg => { try { parent.postMessage({ src: 'docdesk-eraser', ...msg }, location.protocol === 'file:' ? '*' : location.origin); } catch (e) {} };
     // ธีม: อ่านสีจาก DocDesk แล้วตั้งค่าให้ตรงกัน
     function syncTheme() {
       try {
@@ -1866,10 +2270,14 @@ self.onmessage = async e => {
     });
     // แจ้งความสูงจริงให้ DocDesk ปรับกรอบ
     let lastH = 0;
-    new ResizeObserver(() => {
+    const postHeight = force => {
+      if (fsOn()) return;                         // ตอนเต็มจอไม่ต้องบอกความสูง
       const h = Math.ceil(document.documentElement.scrollHeight);
-      if (Math.abs(h - lastH) > 2) { lastH = h; toParent({ type: 'height', h }); }
-    }).observe(document.body);
+      if (force || Math.abs(h - lastH) > 2) { lastH = h; toParent({ type: 'height', h }); }
+    };
+    new ResizeObserver(() => postHeight(false)).observe(document.body);
+    document.addEventListener('fullscreenchange', () => setTimeout(() => postHeight(true), 150));
+    window.__postHeight = postHeight;
     toParent({ type: 'ready' });
   }
 })();

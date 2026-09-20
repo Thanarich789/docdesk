@@ -19,29 +19,99 @@
   --bg:#12131C; --panel:#1B1D2A; --ink:#E9ECF7; --muted:#99A2BC; --line:#2C3043;
   --accent:#9B7BFF; --accent-ink:#0B0B14; --glow:#3FE0D0; --ok:#3CC98E; --warn:#FF8A50; color-scheme:dark;}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
 button,select,input{font:inherit;color:inherit}
-.wrap{max-width:1240px;margin:0 auto;padding:20px 16px 40px}
-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
-h1{font-size:1.85rem;margin:0;font-weight:700;letter-spacing:-.01em;position:relative;z-index:0}
-h1 .hl{position:relative;white-space:nowrap}
-h1 .hl::after{content:"";position:absolute;left:-3px;right:-3px;bottom:.08em;height:.42em;background:var(--glow);opacity:.38;border-radius:99px;z-index:-1;transform:rotate(-1deg)}
-.sub{margin:6px 0 0;color:var(--muted);max-width:62ch}
-.privacy{font-size:.85rem;color:var(--ok)}
-.layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
-@media (max-width:880px){.layout{grid-template-columns:1fr}}
-.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;min-width:0}
-.view{position:relative;height:min(64vh,620px);min-height:300px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(45deg,color-mix(in srgb,var(--line) 45%,transparent) 25%,transparent 25%,transparent 75%,color-mix(in srgb,var(--line) 45%,transparent) 75%) 0 0/18px 18px,
+.app{display:flex;flex-direction:column;gap:6px;height:100%;min-height:480px;padding:8px;max-width:1800px;margin:0 auto;
+  overflow-x:hidden;overflow-y:auto}   /* จอเตี้ยมาก ให้เลื่อนหน้า ไม่ใช่บีบแถบ */
+.app:fullscreen{max-width:none;background:var(--bg);padding:12px}
+
+/* ===== แถบบน ===== */
+.topbar,.toolbar,.bottombar{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;min-width:0;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 9px;
+  flex:0 0 auto;overflow:visible}   /* ห้ามถูกบีบจนข้อความถูกตัด และห้ามตัดขอบป็อปอัป */
+.toolbar{row-gap:6px}
+.brand{font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.spacer{flex:1 1 auto}
+.privacy{font-size:.78rem;color:var(--ok);white-space:nowrap}
+.modetabs{display:flex;gap:3px;border:1px solid var(--line);border-radius:10px;padding:3px}
+.modetabs button{border:0;background:transparent;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:.85rem;white-space:nowrap}
+.modetabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.tbtn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:5px 9px;cursor:pointer;font-size:.82rem;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.tbtn:hover:not(:disabled){border-color:var(--ink)}
+.tbtn:disabled{opacity:.45;cursor:not-allowed}
+
+/* ===== แถบวิธีใช้ ===== */
+.helpbar{background:color-mix(in srgb,var(--accent) 7%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));
+  border-radius:12px;padding:6px 10px;font-size:.8rem;flex:0 0 auto}
+.helpbar.collapsed{display:none}
+.helpbar .body{display:flex;gap:5px 6px;flex-wrap:wrap;align-items:center;min-width:0}
+.helpbar b{color:var(--accent);flex:none}
+#helpSteps{display:contents}          /* ให้ป้ายขั้นตอนตัดบรรทัดเองได้ ไม่ดันหน้าให้ล้น */
+.helpbar .step{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:1px 9px;white-space:nowrap;font-size:.78rem}
+.helpbar .tip{color:var(--muted);font-size:.76rem;flex-basis:100%}
+
+/* ===== แถบเครื่องมือ ===== */
+.toolbar{row-gap:6px}
+.tgroup{display:flex;align-items:center;gap:6px;flex:none;max-width:100%;flex-wrap:wrap}
+.tgroup.grow{flex:1 1 260px;min-width:220px}
+.tgroup.info{font-size:.78rem;color:var(--muted);flex:1 1 100%;order:9;line-height:1.35}
+.tlabel{font-size:.82rem;color:var(--muted);white-space:nowrap}
+.px{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cap{font-size:.76rem;color:var(--warn);white-space:nowrap}
+.toolbar input[type=range]{flex:1 1 80px;min-width:70px;accent-color:var(--accent)}
+.num{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:9px;padding:3px 6px;background:var(--panel)}
+.num input{width:44px;border:0;background:transparent;text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
+.num input::-webkit-outer-spin-button,.num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.num span{color:var(--muted);font-size:.82rem}
+.quick{display:inline-flex;gap:4px;flex-wrap:wrap}
+.quick button{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:3px 9px;font-size:.78rem;cursor:pointer}
+.quick button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.seg{display:inline-flex;gap:3px;border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{border:0;background:transparent;padding:5px 9px;border-radius:7px;cursor:pointer;font-size:.82rem;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel);font-weight:600}
+.presetgrid{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;max-width:100%;scrollbar-width:thin}
+.presetgrid button{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:4px 9px;cursor:pointer;font-size:.78rem;white-space:nowrap;line-height:1.25;text-align:left}
+.presetgrid button b{display:block;font-size:.8rem;font-weight:600}
+.presetgrid button small{color:var(--muted);font-size:.68rem}
+.presetgrid button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--panel))}
+.dims{display:inline-flex;align-items:center;gap:4px}
+.dims input{width:76px;padding:5px 6px;border:1px solid var(--line);border-radius:8px;background:var(--panel);text-align:center;font-variant-numeric:tabular-nums}
+select{padding:6px 8px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font-size:.84rem}
+input[type=color]{width:38px;height:30px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:2px}
+/* ป็อปอัปตั้งค่าละเอียด */
+.pop-wrap{position:relative}
+.pop{position:absolute;top:calc(100% + 8px);left:auto;right:0;z-index:20;width:min(250px,calc(100vw - 24px));background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:12px;box-shadow:0 10px 26px rgba(0,0,0,.18)}
+.pop .lbl{font-size:.8rem;display:block;margin:6px 0 2px;color:var(--muted)}
+.pop .lbl:first-child{margin-top:0}
+.pop .range{display:flex;align-items:center;gap:8px}
+.pop .range input{flex:1;accent-color:var(--accent)}
+.pop .range output{min-width:42px;text-align:right;font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.pop .hint{font-size:.76rem;color:var(--muted);margin:8px 0 0}
+.switchrow{display:inline-flex;align-items:center;gap:7px}
+.switchrow .txt{font-size:.84rem;white-space:nowrap}
+.switch{position:relative;width:42px;height:24px;flex:none;border:0;border-radius:99px;background:var(--line);cursor:pointer;transition:background .18s;padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .18s}
+.switch[aria-checked="true"]{background:var(--accent)}
+.switch[aria-checked="true"]::after{transform:translateX(18px)}
+
+/* ===== พื้นที่ภาพ ===== */
+.view{position:relative;flex:1 1 auto;min-height:220px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:
+  linear-gradient(45deg,color-mix(in srgb,var(--line) 45%,transparent) 25%,transparent 25%,transparent 75%,color-mix(in srgb,var(--line) 45%,transparent) 75%) 0 0/18px 18px,
   linear-gradient(45deg,color-mix(in srgb,var(--line) 45%,transparent) 25%,transparent 25%,transparent 75%,color-mix(in srgb,var(--line) 45%,transparent) 75%) 9px 9px/18px 18px,
   color-mix(in srgb,var(--line) 18%,var(--panel))}
-/* ตัวเลื่อนเทียบก่อน–หลัง */
 .scroller{position:absolute;inset:0;overflow:auto;display:flex;padding:10px;overscroll-behavior:contain}
 .compare{position:relative;line-height:0;margin:auto;flex:none;touch-action:none;user-select:none;box-shadow:0 1px 8px rgba(0,0,0,.18)}
 .compare canvas{display:block;width:100%;height:100%}
-.compare.zoomed{cursor:grab}
-.compare.panning{cursor:grabbing}
+.compare .after{position:absolute;inset:0;width:100%;height:100%;clip-path:inset(0 0 0 var(--split,50%))}
+.compare .bar{position:absolute;top:0;bottom:0;left:var(--split,50%);width:2px;background:var(--glow);box-shadow:0 0 0 1px rgba(0,0,0,.35);cursor:ew-resize}
+.compare .bar::after{content:"⇆";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;
+  background:var(--glow);color:#06221F;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.compare.zoomed{cursor:grab}.compare.panning{cursor:grabbing}
 .compare.pixel canvas{image-rendering:pixelated}
+.tagl,.tagr{position:absolute;top:8px;font-size:.74rem;padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--ink) 72%,transparent);color:var(--panel)}
+.tagl{left:8px}.tagr{right:8px}
 .zoombar{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:2px;padding:4px;border-radius:12px;z-index:2;
   background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.15)}
 .zoombar button{border:0;background:transparent;min-width:34px;height:32px;border-radius:8px;cursor:pointer;font-size:1rem;padding:0 8px}
@@ -49,213 +119,226 @@ h1 .hl::after{content:"";position:absolute;left:-3px;right:-3px;bottom:.08em;hei
 .zoombar button:disabled{opacity:.4;cursor:not-allowed}
 .zoombar #zoomPct{min-width:58px;font-size:.85rem;font-variant-numeric:tabular-nums}
 .zoombar .sep{width:1px;height:20px;background:var(--line);margin:0 2px}
-.compare .after{position:absolute;inset:0;width:100%;height:100%;clip-path:inset(0 0 0 var(--split,50%))}
-.compare .bar{position:absolute;top:0;bottom:0;left:var(--split,50%);width:2px;background:var(--glow);box-shadow:0 0 0 1px rgba(0,0,0,.35);cursor:ew-resize}
-.compare .bar::after{content:"⇆";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;
-  background:var(--glow);color:#06221F;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.tagl,.tagr{position:absolute;top:8px;font-size:.75rem;padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--ink) 72%,transparent);color:var(--panel)}
-.tagl{left:8px}.tagr{right:8px}
-.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:22px;background:var(--panel);border:2px dashed var(--line);border-radius:10px;cursor:pointer}
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:22px;background:var(--panel);cursor:pointer}
 .empty strong{font-size:1.1rem}.empty small{color:var(--muted)}
 .busy{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:color-mix(in srgb,var(--panel) 74%,transparent);backdrop-filter:blur(2px);z-index:3;font-weight:600}
 .bar2{width:min(320px,70%);height:8px;border-radius:99px;background:var(--line);overflow:hidden}
 .bar2 i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--glow));transition:width .15s}
-.hidden{display:none!important}
-.stagebar{display:flex;justify-content:space-between;gap:8px;margin-top:10px;color:var(--muted);font-size:.85rem;flex-wrap:wrap}
-.sizes{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-.chip{border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:.82rem}
+
+/* ===== แถบล่าง ===== */
+.bottombar{font-size:.8rem}
+.stat{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.sizes{display:inline-flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:99px;padding:2px 9px;font-size:.78rem}
 .chip b{font-variant-numeric:tabular-nums}
 .chip.new{border-color:var(--accent);color:var(--accent)}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;position:sticky;top:12px}
-.help{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:12px 14px;background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
-.help header{display:flex;align-items:center;justify-content:space-between;margin:0}
-.help h2{margin:0;font-size:.95rem}
-.help .toggle{border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:.82rem}
-.help ol{margin:8px 0 0;padding-left:1.15em;font-size:.86rem;line-height:1.6}
-.help .tip{margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--line);color:var(--muted);font-size:.8rem}
-.help.collapsed .body{display:none}
-.group h2{font-size:.95rem;margin:0 0 8px;font-weight:600}
-.seg{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
-.seg.two{grid-template-columns:repeat(2,1fr)}
-.seg.three{grid-template-columns:repeat(3,1fr)}
-.seg button{border:0;background:transparent;padding:8px 2px;border-radius:7px;cursor:pointer;font-size:.88rem}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel);font-weight:600}
-.range{display:flex;align-items:center;gap:10px}
-.range input{flex:1;accent-color:var(--accent)}
-.sizeline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-.sizeline .px{font-weight:600;font-variant-numeric:tabular-nums}
-.sizeline .cap{font-size:.78rem;color:var(--warn)}
-.scaler{display:flex;align-items:center;gap:10px}
-.scaler input[type=range]{flex:1;accent-color:var(--accent);height:26px}
-.scaler .num{width:74px;display:flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:10px;padding:4px 6px;background:var(--panel)}
-.scaler .num input{width:100%;border:0;background:transparent;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;padding:2px 0}
-.scaler .num input::-webkit-outer-spin-button,.scaler .num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.scaler .num span{color:var(--muted);font-size:.85rem}
-.switchrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.switchrow .txt{font-size:.92rem;display:flex;align-items:center;gap:6px}
-.switch{position:relative;width:46px;height:26px;flex:none;border:0;border-radius:99px;background:var(--line);cursor:pointer;transition:background .18s;padding:0}
-.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .18s}
-.switch[aria-checked="true"]{background:var(--accent)}
-.switch[aria-checked="true"]::after{transform:translateX(20px)}
-.bgopts{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
-.quick{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.quick button{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:3px 12px;font-size:.82rem;cursor:pointer}
-.quick button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
-.range output{min-width:44px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem}
-.lbl{font-size:.85rem;display:block;margin-bottom:2px}
-.hint{font-size:.8rem;color:var(--muted);margin:6px 0 0}
-.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:.9rem}
-.btn:hover:not(:disabled){border-color:var(--ink)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:.88rem}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;padding:12px;font-size:1rem;width:100%}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;padding:8px 16px;font-size:.9rem}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08)}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s;max-width:92vw;z-index:10}
+.hidden{display:none!important}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:10px;
+  font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s;max-width:92vw;z-index:50}
 .toast.show{opacity:1}.toast.err{background:var(--warn);color:#fff}
 kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:.78rem}
+/* โหมดฝังใน DocDesk */
 body.embed{background:transparent}
-body.embed .wrap{padding:0;max-width:none}
-body.embed header{display:none}
-body.embed .view{height:var(--boxh,480px)}
-body.embed .panel{position:static}
+body.embed .app{padding:0;height:auto}
+body.embed .view{height:var(--boxh,460px);flex:none}
+/* ตอนเต็มจอ ให้ภาพสูงเต็มพื้นที่ แม้อยู่ในกรอบ DocDesk */
+.app:fullscreen{height:100vh}
+.app:fullscreen .view,body.expanded .view{height:auto!important;flex:1 1 auto!important}
+body.expanded .app{position:fixed;inset:0;z-index:9999;background:var(--bg);padding:10px;height:100vh}
+body.expanded .view{height:auto;flex:1 1 auto}
+@media (max-width:980px){ .brand{display:none} }
+@media (max-width:760px){
+  body{font-size:13.5px}
+  .privacy{display:none}
+  .app{padding:6px;gap:5px}
+  .topbar,.toolbar,.bottombar{padding:5px 7px;gap:5px 6px}
+  .tbtn,.modetabs button,.seg button,.quick button{font-size:.78rem;padding:4px 8px}
+  .tlabel{font-size:.76rem}
+  .px{font-size:.86rem}
+  .tgroup.grow{flex:1 1 100%;min-width:0}
+  .quick{flex:1 1 auto;justify-content:space-between;flex-wrap:nowrap}
+  .num input{width:38px}
+  #upPanel .tgroup:first-child{flex:1 1 100%}
+  .sizes{display:none}                 /* ป้ายขนาดไฟล์ไปโชว์ในแถบสถานะแทน */
+  .helpbar .tip{display:none}
+  .presetgrid{max-width:100%}
+  .bottombar #newBtn span.t{display:none}
+}
+@media (max-width:420px){
+  .helpbar .step:nth-child(n+5){display:none}   /* มือถือเล็ก: โชว์ 3 ขั้นตอนแรกพอ */
+  .modetabs button{padding:4px 7px;font-size:.74rem}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>ขยายภาพให้<span class="hl">ใหญ่และชัด</span>ขึ้น</h1>
-      <p class="sub">ขยายภาพเล็กหรือภาพเบลอให้ใหญ่ขึ้นสูงสุด 4 เท่า พร้อมลับคม ลดจุดรบกวน และปรับแสงอัตโนมัติ</p>
+<div class="app" id="app">
+  <!-- ===== แถบบนสุด: โหมด + ปุ่มช่วยเหลือ + เต็มจอ ===== -->
+  <div class="topbar">
+    <span class="brand">🔎 ขยาย / ปรับขนาดภาพ</span>
+    <div class="modetabs" role="tablist">
+      <button type="button" id="tabUp" role="tab" aria-selected="true">✨ ขยายภาพ</button>
+      <button type="button" id="tabFit" role="tab" aria-selected="false">📐 ปรับขนาดตามสื่อ</button>
     </div>
-    <div class="privacy">🔒 ประมวลผลในเครื่อง ไม่อัปโหลดรูป</div>
-  </header>
+    <span class="privacy" title="ภาพไม่ถูกส่งออกนอกเครื่อง">🔒 ประมวลผลในเครื่อง</span>
+    <div class="spacer"></div>
+    <button type="button" class="tbtn" id="helpToggle" aria-expanded="true">📖 วิธีใช้</button>
+    <button type="button" class="tbtn" id="fsBtn" title="ดูเต็มจอ (F)">⛶ เต็มจอ</button>
+  </div>
 
-  <div class="layout">
-    <section class="stage">
-      <div class="view" id="view">
-        <div class="scroller hidden" id="scroller">
-        <div class="compare" id="compare">
-          <canvas id="beforeC"></canvas>
-          <canvas id="afterC" class="after"></canvas>
-          <span class="tagl">ก่อน</span><span class="tagr">หลัง</span>
-          <div class="bar" id="bar"></div>
-        </div>
-        </div>
-        <div class="zoombar hidden" id="zoombar" role="group" aria-label="ย่อขยายการดูภาพ">
-          <button type="button" id="zoomOut" title="ย่อ (−)" aria-label="ย่อ">−</button>
-          <button type="button" id="zoomPct" title="ดูขนาดจริง 100%">100%</button>
-          <button type="button" id="zoomIn" title="ขยาย (+)" aria-label="ขยาย">+</button>
-          <span class="sep"></span>
-          <button type="button" id="zoomFit" title="พอดีจอ (0)">⤢ พอดีจอ</button>
-        </div>
-        <div class="empty" id="empty">
-          <div style="font-size:2.3rem">🔎</div>
-          <strong>ลากรูปมาวาง หรือคลิกเพื่อเลือก</strong>
-          <small>รองรับ JPG · PNG · WebP · วางจากคลิปบอร์ดด้วย <kbd>Ctrl</kbd>+<kbd>V</kbd> ได้</small>
-          <button class="btn" id="demoBtn" type="button">ลองกับภาพตัวอย่าง</button>
-        </div>
-        <div class="busy hidden" id="busy">
-          <span id="busyText">กำลังขยายภาพ…</span>
-          <div class="bar2"><i id="busyFill"></i></div>
-        </div>
-      </div>
-      <div class="sizes" id="sizes"></div>
-      <div class="stagebar"><span id="info">ยังไม่มีรูป</span><span id="info2"></span></div>
-      <input type="file" id="file" accept="image/*" hidden>
-    </section>
+  <!-- ===== แถบวิธีใช้ (ซ่อนได้) ===== -->
+  <div class="helpbar" id="helpBox">
+    <div class="body" id="helpBody">
+      <b>วิธีใช้:</b>
+      <span id="helpSteps"></span>
+      <span class="tip" id="helpTip"></span>
+    </div>
+  </div>
 
-    <aside class="panel">
-      <section class="help" id="helpBox">
-        <header><h2>📖 วิธีใช้</h2><button type="button" class="toggle" id="helpToggle" aria-expanded="true">ซ่อน</button></header>
-        <div class="body">
-          <ol>
-            <li>เลือกรูป (ลากวาง / คลิก / <kbd>Ctrl</kbd>+<kbd>V</kbd>)</li>
-            <li><b>เลื่อนแถบขนาด</b> (หรือพิมพ์ตัวเลขในช่อง ×) — ดูขนาดพิกเซลที่จะได้ด้านบนแถบ · 2 เท่าพอสำหรับงานทั่วไป</li>
-            <li>เลือก <b>ชนิดภาพ</b> ให้ตรงงาน ระบบตั้งค่าที่เหมาะให้เอง</li>
-            <li>กด <b>✨ ขยายภาพ</b> แล้ว<b>ลากวงกลม ⇆ กลางภาพ</b>เพื่อเทียบก่อน–หลัง</li>
-            <li>อยากดูใกล้ ๆ กดปุ่ม <b>− +</b> มุมขวาล่าง (หรือ <kbd>Ctrl</kbd>+ล้อเมาส์) ตอนซูมอยู่ให้ลากภาพเพื่อเลื่อนดู</li>
-            <li>อยากได้พื้นหลังใส เปิดสวิตช์ <b>🪟 พื้นหลังโปร่งใส</b> (ใช้กับพื้นหลังสีพื้น เช่น โลโก้)</li>
-            <li>พอใจแล้วกดบันทึก PNG (คมสุด/เก็บความโปร่งใส) หรือ JPG (ไฟล์เล็ก พื้นหลังจะเป็นสีขาว)</li>
-          </ol>
-          <p class="tip">💡 ภาพต้นฉบับยิ่งเล็ก ยิ่งขยายได้จำกัด — ขยาย 2 เท่าจะได้ผลดีที่สุด · ถ้าภาพมีเม็ดนอยส์ ให้เพิ่ม “ลดจุดรบกวน” ก่อนลับคม</p>
-        </div>
-      </section>
+  <!-- ===== แถบเครื่องมือ: โหมดขยายภาพ ===== -->
+  <div class="toolbar" id="upPanel">
+    <div class="tgroup">
+      <span class="tlabel">ขนาด</span>
+      <span class="px" id="pxOut">—</span>
+      <span class="cap hidden" id="capNote">👑 เกินขีดจำกัด</span>
+    </div>
+    <div class="tgroup grow">
+      <input type="range" id="scale" min="1" max="4" step="0.05" value="2" aria-label="ขนาดที่ต้องการ (เท่า)">
+      <label class="num"><input type="number" id="scaleNum" min="1" max="4" step="0.1" value="2" aria-label="จำนวนเท่า"><span>×</span></label>
+      <span class="quick" id="quick">
+        <button type="button" data-s="1">1×</button><button type="button" data-s="1.5">1.5×</button>
+        <button type="button" data-s="2" aria-pressed="true">2×</button><button type="button" data-s="3">3×</button>
+        <button type="button" data-s="4">4×</button>
+      </span>
+    </div>
+  </div>
 
-      <div class="group">
-        <h2>ขนาดที่ต้องการ</h2>
-        <div class="sizeline">
-          <span>ขนาด</span><span class="px" id="pxOut">—</span><span class="cap hidden" id="capNote">👑 เกินขีดจำกัด</span>
-        </div>
-        <div class="scaler">
-          <input type="range" id="scale" min="1" max="4" step="0.05" value="2" aria-label="ขนาดที่ต้องการ (เท่า)">
-          <label class="num"><input type="number" id="scaleNum" min="1" max="4" step="0.1" value="2" aria-label="จำนวนเท่า"><span>×</span></label>
-        </div>
-        <div class="quick" id="quick">
-          <button type="button" data-s="1">เท่าเดิม</button>
-          <button type="button" data-s="1.5">1.5×</button>
-          <button type="button" data-s="2" aria-pressed="true">2×</button>
-          <button type="button" data-s="3">3×</button>
-          <button type="button" data-s="4">4×</button>
-        </div>
-        <p class="hint" id="sizeHint">—</p>
-      </div>
-
-      <div class="group">
-        <h2>ชนิดภาพ (ตั้งค่าอัตโนมัติ)</h2>
-        <div class="seg three" id="presetSeg">
-          <button type="button" data-p="photo" aria-pressed="true">📷 ภาพถ่าย</button>
-          <button type="button" data-p="doc" aria-pressed="false">📄 เอกสาร</button>
-          <button type="button" data-p="logo" aria-pressed="false">🎯 โลโก้</button>
-        </div>
-      </div>
-
-      <div class="group">
-        <h2>ปรับเอง</h2>
+  <!-- ===== แถบเครื่องมือร่วม (ใช้ได้ทั้ง 2 โหมด) ===== -->
+  <div class="toolbar" id="commonPanel">
+    <div class="tgroup">
+      <span class="tlabel">ชนิดภาพ</span>
+      <span class="seg three" id="presetSeg">
+        <button type="button" data-p="photo" aria-pressed="true">📷 ภาพถ่าย</button>
+        <button type="button" data-p="doc" aria-pressed="false">📄 เอกสาร</button>
+        <button type="button" data-p="logo" aria-pressed="false">🎯 โลโก้</button>
+      </span>
+    </div>
+    <div class="tgroup pop-wrap">
+      <button type="button" class="tbtn" id="advBtn" aria-expanded="false">⚙️ ปรับเอง ▾</button>
+      <div class="pop hidden" id="advPop">
         <label class="lbl" for="sharpen">ความคม</label>
         <div class="range"><input type="range" id="sharpen" min="0" max="150" value="60"><output id="sharpenOut">60</output></div>
-        <label class="lbl" for="denoise" style="margin-top:8px">ลดจุดรบกวน</label>
+        <label class="lbl" for="denoise">ลดจุดรบกวน</label>
         <div class="range"><input type="range" id="denoise" min="0" max="3" value="0"><output id="denoiseOut">ปิด</output></div>
-        <label class="lbl" for="levels" style="margin-top:8px">ปรับแสงอัตโนมัติ</label>
+        <label class="lbl" for="levels">ปรับแสงอัตโนมัติ</label>
         <div class="range"><input type="range" id="levels" min="0" max="100" value="0"><output id="levelsOut">0%</output></div>
-        <label class="lbl" for="sat" style="margin-top:8px">ความอิ่มสี</label>
+        <label class="lbl" for="sat">ความอิ่มสี</label>
         <div class="range"><input type="range" id="sat" min="-40" max="40" value="0"><output id="satOut">0</output></div>
       </div>
-
-      <div class="group">
-        <div class="switchrow">
-          <span class="txt">🪟 พื้นหลังโปร่งใส</span>
-          <button type="button" class="switch" id="transSw" role="switch" aria-checked="false" aria-label="พื้นหลังโปร่งใส"></button>
-        </div>
-        <p class="hint">ลบพื้นหลังสีพื้นออก ได้ไฟล์ PNG โปร่งใส — เหมาะกับโลโก้ ตราบริษัท รูปติดบัตรพื้นเรียบ</p>
-        <div class="bgopts hidden" id="bgOpts">
-          <label class="lbl" for="bgTol">ความไวสีพื้นหลัง</label>
-          <div class="range"><input type="range" id="bgTol" min="5" max="120" value="32"><output id="bgTolOut">32</output></div>
-          <label class="lbl" for="bgFeather" style="margin-top:8px">ความนุ่มของขอบ</label>
-          <div class="range"><input type="range" id="bgFeather" min="0" max="6" value="1"><output id="bgFeatherOut">1 px</output></div>
-          <p class="hint" id="bgResult">พื้นหลังต้องเป็นสีพื้นและติดขอบภาพ · พื้นหลังเป็นภาพถ่ายซับซ้อน ให้ใช้เครื่องมือ “ลบวัตถุในภาพ” โหมด AI แทน</p>
-        </div>
+    </div>
+    <div class="tgroup info" id="sizeHint">—</div>
+    <div class="tgroup pop-wrap">
+      <span class="switchrow"><span class="txt">🪟 พื้นหลังใส</span>
+        <button type="button" class="switch" id="transSw" role="switch" aria-checked="false" aria-label="พื้นหลังโปร่งใส"></button></span>
+      <div class="pop hidden" id="bgOpts">
+        <label class="lbl" for="bgTol">ความไวสีพื้นหลัง</label>
+        <div class="range"><input type="range" id="bgTol" min="5" max="120" value="32"><output id="bgTolOut">32</output></div>
+        <label class="lbl" for="bgFeather">ความนุ่มของขอบ</label>
+        <div class="range"><input type="range" id="bgFeather" min="0" max="6" value="1"><output id="bgFeatherOut">1 px</output></div>
+        <p class="hint" id="bgResult">ใช้กับพื้นหลังสีพื้นที่ติดขอบภาพ เช่น โลโก้ ตราบริษัท</p>
       </div>
-
-      <button class="btn primary" id="runBtn" disabled>✨ ขยายภาพ</button>
-
-      <div class="group">
-        <h2>บันทึก</h2>
-        <label class="lbl" for="quality">คุณภาพ JPG</label>
-        <select id="quality">
-          <option value="0.75">เล็ก — ส่งอีเมล/ไลน์</option>
-          <option value="0.88" selected>ปกติ</option>
-          <option value="0.95">คมชัดสูง</option>
-        </select>
-        <div class="row" style="margin-top:8px">
-          <button class="btn" id="savePng" disabled>PNG</button>
-          <button class="btn" id="saveJpg" disabled>JPG</button>
-        </div>
-        <button class="btn" id="newBtn" style="margin-top:8px;width:100%">📂 เปลี่ยนรูป</button>
-      </div>
-    </aside>
+    </div>
   </div>
+
+  <!-- ===== แถบเครื่องมือ: โหมดปรับขนาดตามสื่อ ===== -->
+  <div class="toolbar hidden" id="fitPanel">
+    <div class="tgroup grow">
+      <span class="tlabel">ขนาดปลายทาง</span>
+      <span class="presetgrid" id="presetGrid"></span>
+    </div>
+    <div class="tgroup hidden" id="customWrap">
+      <span class="dims">
+        <input type="number" id="cw" min="16" step="1" aria-label="กว้าง"><span>×</span><input type="number" id="ch" min="16" step="1" aria-label="สูง">
+      </span>
+      <select id="unit"><option value="px">px</option><option value="in">นิ้ว</option><option value="cm">ซม.</option></select>
+      <select id="dpi"><option value="72">72 DPI</option><option value="150">150 DPI</option><option value="300" selected>300 DPI</option></select>
+    </div>
+    <div class="tgroup">
+      <span class="seg two" id="fitSeg">
+        <button type="button" data-f="cover" aria-pressed="true">✂️ ครอปให้เต็ม</button>
+        <button type="button" data-f="contain" aria-pressed="false">🖼️ ใส่ทั้งภาพ</button>
+      </span>
+    </div>
+    <div class="tgroup hidden" id="bgWrap">
+      <span class="tlabel">ขอบ</span>
+      <select id="fitBg">
+        <option value="#FFFFFF">ขาว</option>
+        <option value="blur">เบลอจากภาพ</option>
+        <option value="#C7DFF5">ฟ้าอ่อน</option>
+        <option value="none">โปร่งใส</option>
+        <option value="custom">เลือกสีเอง…</option>
+      </select>
+      <input type="color" id="fitBgColor" value="#0E8C93" class="hidden">
+    </div>
+    <div class="tgroup" id="zoomWrap">
+      <span class="tlabel">ซูมในกรอบ</span>
+      <input type="range" id="cropZoom" min="100" max="300" value="100" style="width:110px"><output id="cropZoomOut">100%</output>
+      <button type="button" class="tbtn" id="centerBtn">กึ่งกลาง</button>
+    </div>
+    <div class="tgroup info" id="fitInfo">—</div>
+  </div>
+
+  <!-- ===== พื้นที่ภาพ ===== -->
+  <div class="view" id="view">
+    <div class="scroller hidden" id="scroller">
+      <div class="compare" id="compare">
+        <canvas id="beforeC"></canvas>
+        <canvas id="afterC" class="after"></canvas>
+        <span class="tagl">ก่อน</span><span class="tagr">หลัง</span>
+        <div class="bar" id="bar"></div>
+      </div>
+    </div>
+    <div class="zoombar hidden" id="zoombar" role="group" aria-label="ย่อขยายการดูภาพ">
+      <button type="button" id="zoomOut" title="ย่อ (−)" aria-label="ย่อ">−</button>
+      <button type="button" id="zoomPct" title="ดูขนาดจริง 100%">100%</button>
+      <button type="button" id="zoomIn" title="ขยาย (+)" aria-label="ขยาย">+</button>
+      <span class="sep"></span>
+      <button type="button" id="zoomFit" title="พอดีจอ (0)">⤢ พอดีจอ</button>
+    </div>
+    <div class="empty" id="empty">
+      <div style="font-size:2.3rem">🔎</div>
+      <strong>ลากรูปมาวาง หรือคลิกเพื่อเลือก</strong>
+      <small>รองรับ JPG · PNG · WebP · วางจากคลิปบอร์ดด้วย <kbd>Ctrl</kbd>+<kbd>V</kbd> ได้</small>
+      <button class="btn" id="demoBtn" type="button">ลองกับภาพตัวอย่าง</button>
+    </div>
+    <div class="busy hidden" id="busy">
+      <span id="busyText">กำลังขยายภาพ…</span>
+      <div class="bar2"><i id="busyFill"></i></div>
+    </div>
+  </div>
+
+  <!-- ===== แถบล่าง: สถานะ + ปุ่มทำงาน/บันทึก ===== -->
+  <div class="bottombar">
+    <span class="sizes" id="sizes"></span>
+    <span class="stat" id="info">ยังไม่มีรูป</span>
+    <span class="stat" id="info2"></span>
+    <div class="spacer"></div>
+    <button class="tbtn" id="newBtn">📂 เปลี่ยนรูป</button>
+    <select id="quality" title="คุณภาพ JPG">
+      <option value="0.75">JPG เล็ก</option>
+      <option value="0.88" selected>JPG ปกติ</option>
+      <option value="0.95">JPG คมสูง</option>
+    </select>
+    <button class="tbtn" id="savePng" disabled>💾 PNG</button>
+    <button class="tbtn" id="saveJpg" disabled>💾 JPG</button>
+    <button class="btn primary" id="runBtn" disabled>✨ ขยายภาพ</button>
+  </div>
+  <input type="file" id="file" accept="image/*" hidden>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
@@ -527,7 +610,58 @@ body.embed .panel{position:static}
     return cur;
   }
 
-  root.ImageUp = { enhance, resize, unsharp, denoise, autoLevels, saturate, removeBackground };
+  /* ---------- ฝังค่า DPI ลงไฟล์ (ให้โปรแกรมพิมพ์รู้ขนาดจริงเป็นนิ้ว/ซม.) ---------- */
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+    return t;
+  })();
+  const crc32 = bytes => {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  };
+  async function setDpi(blob, dpi) {
+    if (!dpi || dpi <= 0) return blob;
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    if (blob.type === 'image/jpeg') {
+      // JFIF APP0: units=1 (นิ้ว) + ความหนาแน่น X/Y
+      if (buf[0] !== 0xFF || buf[1] !== 0xD8) return blob;
+      let i = 2;
+      while (i < buf.length - 1) {
+        if (buf[i] !== 0xFF) break;
+        const marker = buf[i + 1], len = (buf[i + 2] << 8) | buf[i + 3];
+        if (marker === 0xE0 && len >= 16) {
+          buf[i + 11] = 1;                                   // units = dots per inch
+          buf[i + 12] = dpi >> 8; buf[i + 13] = dpi & 255;   // Xdensity
+          buf[i + 14] = dpi >> 8; buf[i + 15] = dpi & 255;   // Ydensity
+          return new Blob([buf], { type: blob.type });
+        }
+        if (marker === 0xDA) break;
+        i += 2 + len;
+      }
+      return blob;
+    }
+    if (blob.type === 'image/png') {
+      // แทรก chunk pHYs (พิกเซลต่อเมตร) ต่อจาก IHDR
+      const ppm = Math.round(dpi / 0.0254);
+      const chunk = new Uint8Array(21);
+      const dv = new DataView(chunk.buffer);
+      dv.setUint32(0, 9);
+      chunk.set([0x70, 0x48, 0x59, 0x73], 4);                // 'pHYs'
+      dv.setUint32(8, ppm); dv.setUint32(12, ppm); chunk[16] = 1;
+      dv.setUint32(17, crc32(chunk.subarray(4, 17)));
+      const ihdrEnd = 8 + 4 + 4 + 13 + 4;                    // signature + IHDR ทั้งก้อน
+      const out = new Uint8Array(buf.length + chunk.length);
+      out.set(buf.subarray(0, ihdrEnd), 0);
+      out.set(chunk, ihdrEnd);
+      out.set(buf.subarray(ihdrEnd), ihdrEnd + chunk.length);
+      return new Blob([out], { type: blob.type });
+    }
+    return blob;
+  }
+
+  root.ImageUp = { enhance, resize, unsharp, denoise, autoLevels, saturate, removeBackground, setDpi };
   if (typeof module !== 'undefined') module.exports = root.ImageUp;
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -552,7 +686,21 @@ body.embed .panel{position:static}
     logo:  { sharpen: 90, denoise: 0, levels: 0, sat: 0 },
   };
   const ZMIN = 0.05, ZMAX = 8, ZSTEP = 1.25;
-  const state = { zoom: 1, fitMode: true, pan: null, img: null, w: 0, h: 0, out: null, busy: false, scale: 2, preset: 'photo',
+  /* ===== พรีเซ็ตขนาดปลายทาง (Magic Resize) ===== */
+  const PRESETS_FIT = [
+    { k: 'id1',   t: 'รูปติดบัตร 1 นิ้ว',  s: '2.5×3.5 ซม. · 300 DPI', w: 295,  h: 413,  dpi: 300 },
+    { k: 'id15',  t: 'รูปติดบัตร 1.5 นิ้ว', s: '3.5×4.5 ซม. · 300 DPI', w: 413,  h: 531,  dpi: 300 },
+    { k: 'id2',   t: 'รูปติดบัตร 2 นิ้ว',  s: '5×6 ซม. · 300 DPI',    w: 591,  h: 709,  dpi: 300 },
+    { k: 'a4p',   t: 'A4 แนวตั้ง',         s: '2480×3508 · 300 DPI',  w: 2480, h: 3508, dpi: 300 },
+    { k: 'a4l',   t: 'A4 แนวนอน',          s: '3508×2480 · 300 DPI',  w: 3508, h: 2480, dpi: 300 },
+    { k: 'slide', t: 'สไลด์ 16:9',         s: '1920×1080 · จอ',       w: 1920, h: 1080, dpi: 96 },
+    { k: 'sq',    t: 'โปรไฟล์ LINE/Teams', s: '1000×1000 · จัตุรัส',   w: 1000, h: 1000, dpi: 96 },
+    { k: 'banner',t: 'ป้ายไวนิล 100×60 ซม.', s: '150 DPI',            w: 5906, h: 3543, dpi: 150 },
+    { k: 'custom',t: 'กำหนดเอง…',          s: 'px / นิ้ว / ซม.',       w: 1200, h: 1600, dpi: 300 },
+  ];
+  const state = { mode: 'up', preset: 'id15', fitW: 413, fitH: 531, dpi: 300, fit: 'cover',
+                  fitBg: '#FFFFFF', cropZoom: 1, cx: 0.5, cy: 0.5, cropPan: null,
+                  zoom: 1, fitMode: true, pan: null, img: null, w: 0, h: 0, out: null, busy: false, scale: 2, preset: 'photo',
                   sharpen: 60, denoise: 1, levels: 0, sat: 0, name: 'image', srcBytes: 0,
                   transparent: false, bgTol: 32, bgFeather: 1 };
 
@@ -583,6 +731,7 @@ body.embed .panel{position:static}
       $('info').textContent = `${state.name} · ${w}×${h} px` + (s < 1 ? ' (ย่อจากต้นฉบับ)' : '');
       $('info2').textContent = '';
       updateSizes(); refresh();
+      if (state.mode === 'fit') { updateFitInfo(); renderFitPreview(); }
       if (src.startsWith('blob:')) URL.revokeObjectURL(src);
     };
     im.onerror = () => toast('เปิดไฟล์นี้ไม่ได้ — ใช้ภาพ JPG, PNG หรือ WebP', true);
@@ -651,8 +800,36 @@ body.embed .panel{position:static}
     e.preventDefault(); zoomBy(Math.exp(-e.deltaY * 0.0022), e.clientX, e.clientY);
   }, { passive: false });
   new ResizeObserver(() => { if (state.img && state.fitMode) zoomFit(); }).observe(scroller);
+  /* =========================================================
+     ปุ่มลูกศร — โหมดปรับขนาด: เลื่อนจุดสำคัญในกรอบ · โหมดอื่น: เลื่อนดูภาพเมื่อซูมอยู่
+     ========================================================= */
+  function arrowKey(e) {
+    const dx = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
+    const dy = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
+    if ((!dx && !dy) || !state.img) return false;
+    if (state.mode === 'fit' && state.fit === 'cover') {          // เลื่อนจุดสำคัญในกรอบ
+      e.preventDefault();
+      const step = (e.shiftKey ? 0.05 : 0.01) / state.cropZoom;
+      state.cx = Math.max(0, Math.min(1, state.cx + dx * step));
+      state.cy = Math.max(0, Math.min(1, state.cy + dy * step));
+      renderFitPreview();
+      return true;
+    }
+    const canPan = scroller.scrollWidth > scroller.clientWidth + 2 || scroller.scrollHeight > scroller.clientHeight + 2;
+    if (!canPan) return false;
+    e.preventDefault();
+    const step = e.shiftKey ? 160 : 40;
+    scroller.scrollLeft += dx * step; scroller.scrollTop += dy * step;
+    return true;
+  }
   window.addEventListener('keydown', e => {
     if (!state.img || e.target.matches('input,select,textarea')) return;
+    if (arrowKey(e)) return;
+    const mod = e.ctrlKey || e.metaKey, kk = (e.key || '').toLowerCase();
+    if (mod && kk === 's') { e.preventDefault(); save('png'); return; }          // บันทึก PNG
+    if (mod && kk === 'j') { e.preventDefault(); save('jpg'); return; }          // บันทึก JPG
+    if (e.key === 'Enter' && !state.busy) { e.preventDefault(); (state.mode === 'fit' ? runFit() : run()); return; }
+    if (mod) return;
     if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomBy(ZSTEP); }
     else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomBy(1 / ZSTEP); }
     else if (e.key === '0') zoomFit();
@@ -674,6 +851,11 @@ body.embed .panel{position:static}
   let hintShown = false;
   compare.addEventListener('pointerdown', e => {
     if (e.target === $('bar')) return;                       // ลากที่วงกลม = เลื่อนเส้นแบ่ง
+    if (state.mode === 'fit' && state.fit === 'cover' && !state.out) {   // ลากเลือกจุดสำคัญในกรอบ
+      state.cropPan = { x: e.clientX, y: e.clientY, cx: state.cx, cy: state.cy };
+      compare.setPointerCapture(e.pointerId);
+      return;
+    }
     if (compare.classList.contains('zoomed')) {              // ซูมอยู่ = ลากเพื่อเลื่อนดูภาพ
       state.pan = { x: e.clientX, y: e.clientY, sl: scroller.scrollLeft, st: scroller.scrollTop };
       compare.classList.add('panning');
@@ -684,12 +866,20 @@ body.embed .panel{position:static}
     setSplit(pctFrom(e));
   });
   compare.addEventListener('pointermove', e => {
+    if (state.cropPan) {
+      const r = compare.getBoundingClientRect();
+      const kx = (state.fitW / state.w) / (r.width / state.fitW ? r.width / state.fitW : 1);
+      state.cx = Math.max(0, Math.min(1, state.cropPan.cx - (e.clientX - state.cropPan.x) / r.width * (state.fitW / state.w) / state.cropZoom));
+      state.cy = Math.max(0, Math.min(1, state.cropPan.cy - (e.clientY - state.cropPan.y) / r.height * (state.fitH / state.h) / state.cropZoom));
+      renderFitPreview();
+      return;
+    }
     if (!state.pan) return;
     scroller.scrollLeft = state.pan.sl - (e.clientX - state.pan.x);
     scroller.scrollTop = state.pan.st - (e.clientY - state.pan.y);
   });
   ['pointerup', 'pointercancel'].forEach(t => compare.addEventListener(t, () => {
-    state.pan = null; compare.classList.remove('panning');
+    state.pan = null; state.cropPan = null; compare.classList.remove('panning');
   }));
 
   /* ---------- ขนาดไฟล์ / ขนาดภาพ ---------- */
@@ -726,6 +916,155 @@ body.embed .panel{position:static}
     if (from !== 'num') $('scaleNum').value = Number(v.toFixed(2));
     document.querySelectorAll('#quick button').forEach(b => b.setAttribute('aria-pressed', Math.abs(+b.dataset.s - v) < 0.001));
     updateSizes();
+  }
+
+  /* =========================================================
+     โหมดปรับขนาดตามสื่อ (Magic Resize)
+     cover = ครอปให้เต็มกรอบ · contain = ใส่ทั้งภาพแล้วเติมขอบ
+     ========================================================= */
+  function buildPresets() {
+    const g = $('presetGrid');
+    g.innerHTML = PRESETS_FIT.map(p =>
+      `<button type="button" data-k="${p.k}" aria-pressed="${p.k === state.preset}"><b>${p.t}</b><small>${p.s}</small></button>`).join('');
+    g.querySelectorAll('button').forEach(b => b.onclick = () => setPreset2(b.dataset.k));
+  }
+  function setPreset2(k) {
+    state.preset = k;
+    const p = PRESETS_FIT.find(x => x.k === k);
+    $('presetGrid').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k));
+    $('customWrap').classList.toggle('hidden', k !== 'custom');
+    if (k !== 'custom') { state.fitW = p.w; state.fitH = p.h; state.dpi = p.dpi; }
+    else { $('dpi').value = state.dpi; syncCustomInputs(); }
+    state.cropZoom = 1; state.cx = 0.5; state.cy = 0.5;
+    $('cropZoom').value = 100; $('cropZoomOut').textContent = '100%';
+    updateFitInfo(); renderFitPreview();
+  }
+  // แปลงหน่วยในช่องกำหนดเอง
+  function syncCustomInputs() {
+    const u = $('unit').value, d = +$('dpi').value || 300;
+    const toU = px => u === 'px' ? Math.round(px) : u === 'in' ? +(px / d).toFixed(2) : +(px / d * 2.54).toFixed(2);
+    $('cw').value = toU(state.fitW); $('ch').value = toU(state.fitH);
+    $('cw').step = u === 'px' ? 1 : 0.1; $('ch').step = $('cw').step;
+  }
+  function readCustomInputs() {
+    const u = $('unit').value, d = +$('dpi').value || 300;
+    const toPx = v => u === 'px' ? v : u === 'in' ? v * d : v / 2.54 * d;
+    state.dpi = d;
+    state.fitW = Math.max(16, Math.min(12000, Math.round(toPx(+$('cw').value || 0))));
+    state.fitH = Math.max(16, Math.min(12000, Math.round(toPx(+$('ch').value || 0))));
+    updateFitInfo(); renderFitPreview();
+  }
+  function updateFitInfo() {
+    const inW = (state.fitW / state.dpi), inH = (state.fitH / state.dpi);
+    $('fitInfo').innerHTML = `ผลลัพธ์ <b>${nf(state.fitW)} × ${nf(state.fitH)} px</b> · พิมพ์ได้ ${inW.toFixed(2)}″ × ${inH.toFixed(2)}″ ` +
+      `(${(inW * 2.54).toFixed(1)}×${(inH * 2.54).toFixed(1)} ซม.) ที่ ${state.dpi} DPI`;
+    if (state.img) {
+      const need = Math.max(state.fitW / state.w, state.fitH / state.h);
+      $('fitInfo').innerHTML += need > 2.2
+        ? `<br>⚠️ ภาพต้นฉบับเล็กกว่าปลายทาง ${need.toFixed(1)} เท่า — ระบบจะขยายและลับคมให้ แต่จะไม่คมเท่าภาพใหญ่แต่แรก`
+        : '';
+    }
+  }
+  /* คำนวณพื้นที่ต้นฉบับที่จะถูกใช้ (cover) หรือกรอบที่ภาพจะไปวาง (contain) */
+  function cropRect() {
+    const tw = state.fitW, th = state.fitH, sw = state.w, sh = state.h;
+    if (state.fit === 'contain') {
+      const k = Math.min(tw / sw, th / sh);
+      const dw = sw * k, dh = sh * k;
+      return { contain: true, dx: (tw - dw) / 2, dy: (th - dh) / 2, dw, dh };
+    }
+    const k = Math.max(tw / sw, th / sh) * state.cropZoom;     // ย่อ/ขยายให้ครอบเต็ม
+    let cw = Math.min(sw, tw / k), ch = Math.min(sh, th / k);
+    const x = Math.max(0, Math.min(sw - cw, state.cx * sw - cw / 2));
+    const y = Math.max(0, Math.min(sh - ch, state.cy * sh - ch / 2));
+    return { contain: false, sx: x, sy: y, sw: cw, sh: ch };
+  }
+  /* พรีวิวเร็ว ๆ ด้วยเบราว์เซอร์ (ตอนลาก/ปรับค่า) */
+  function renderFitPreview() {
+    if (!state.img || state.mode !== 'fit') return;
+    const cap = Math.min(1, 1400 / Math.max(state.fitW, state.fitH));
+    const W = Math.max(1, Math.round(state.fitW * cap)), H = Math.max(1, Math.round(state.fitH * cap));
+    [[afterC, actx], [beforeC, bctx]].forEach(([c, x]) => {
+      c.width = W; c.height = H;
+      x.clearRect(0, 0, W, H);
+      const r = cropRect();
+      const bg = state.fitBg === 'custom' ? $('fitBgColor').value : state.fitBg;
+      if (r.contain && bg !== 'none') {
+        if (bg === 'blur') {                       // เติมขอบด้วยภาพเดิมแบบเบลอ
+          x.save(); x.filter = 'blur(24px)';
+          const k = Math.max(W / state.w, H / state.h) * 1.15;
+          x.drawImage(state.img, (W - state.w * k) / 2, (H - state.h * k) / 2, state.w * k, state.h * k);
+          x.restore();
+        } else { x.fillStyle = bg; x.fillRect(0, 0, W, H); }
+      }
+      x.imageSmoothingQuality = 'high';
+      if (r.contain) x.drawImage(state.img, r.dx * cap, r.dy * cap, r.dw * cap, r.dh * cap);
+      else x.drawImage(state.img, r.sx, r.sy, r.sw, r.sh, 0, 0, W, H);
+    });
+    state.out = null;
+    setSplit(100);                                  // พรีวิวเหมือนกันทั้งสองฝั่ง
+    if (state.fitMode) zoomFit(); else setZoom(state.zoom);
+    $('info2').textContent = `พรีวิว ${nf(state.fitW)}×${nf(state.fitH)} px — กดปุ่มด้านล่างเพื่อสร้างภาพจริง`;
+  }
+  /* สร้างภาพจริงด้วย Lanczos + ลับคม */
+  async function runFit() {
+    if (!state.img || state.busy) return;
+    state.busy = true; refresh();
+    $('busy').classList.remove('hidden'); $('busyFill').style.width = '0%';
+    $('busyText').textContent = 'กำลังสร้างภาพตามขนาด…';
+    const t0 = performance.now();
+    try {
+      const r = cropRect(), tw = state.fitW, th = state.fitH;
+      const bg = state.fitBg === 'custom' ? $('fitBgColor').value : state.fitBg;
+      // 1) ตัดพื้นที่ต้นฉบับที่ใช้จริง
+      const srcW = r.contain ? state.w : Math.round(r.sw), srcH = r.contain ? state.h : Math.round(r.sh);
+      const cut = document.createElement('canvas'); cut.width = srcW; cut.height = srcH;
+      const cctx = cut.getContext('2d', { willReadFrequently: true });
+      if (r.contain) cctx.drawImage(state.img, 0, 0);
+      else cctx.drawImage(state.img, Math.round(r.sx), Math.round(r.sy), srcW, srcH, 0, 0, srcW, srcH);
+      // 2) ย่อ/ขยายให้ได้ขนาดพอดีด้วย Lanczos (+ ลับคมเมื่อขยาย)
+      const dstW = r.contain ? Math.round(r.dw) : tw, dstH = r.contain ? Math.round(r.dh) : th;
+      const id = cctx.getImageData(0, 0, srcW, srcH);
+      const up = dstW > srcW;
+      const res = await ImageUp.enhance(id.data, srcW, srcH, {
+        scale: dstW / srcW, sharpen: up ? state.sharpen : Math.min(40, state.sharpen * 0.5),
+        denoise: up ? state.denoise : 0, levels: state.levels / 100, saturation: state.sat,
+        maxSide: 12000, transparent: state.transparent, bgTolerance: state.bgTol, bgFeather: state.bgFeather,
+      }, p => { $('busyFill').style.width = Math.round(p * 100) + '%'; });
+      // 3) วางลงกรอบปลายทาง
+      afterC.width = tw; afterC.height = th;
+      actx.clearRect(0, 0, tw, th);
+      if (r.contain && bg !== 'none') {
+        if (bg === 'blur') {
+          actx.save(); actx.filter = 'blur(' + Math.round(Math.max(tw, th) / 45) + 'px)';
+          const k = Math.max(tw / state.w, th / state.h) * 1.15;
+          actx.drawImage(state.img, (tw - state.w * k) / 2, (th - state.h * k) / 2, state.w * k, state.h * k);
+          actx.restore();
+        } else { actx.fillStyle = bg; actx.fillRect(0, 0, tw, th); }
+      }
+      const tmp = document.createElement('canvas'); tmp.width = res.w; tmp.height = res.h;
+      tmp.getContext('2d').putImageData(new ImageData(res.data, res.w, res.h), 0, 0);
+      if (r.contain) actx.drawImage(tmp, Math.round(r.dx), Math.round(r.dy), Math.round(r.dw), Math.round(r.dh));
+      else actx.drawImage(tmp, 0, 0, tw, th);
+      // ฝั่ง "ก่อน" = ย่อ/ขยายแบบธรรมดา เพื่อเทียบความคม
+      beforeC.width = tw; beforeC.height = th;
+      bctx.clearRect(0, 0, tw, th);
+      if (r.contain && bg !== 'none' && bg !== 'blur') { bctx.fillStyle = bg; bctx.fillRect(0, 0, tw, th); }
+      bctx.imageSmoothingQuality = 'high';
+      if (r.contain) bctx.drawImage(state.img, Math.round(r.dx), Math.round(r.dy), Math.round(r.dw), Math.round(r.dh));
+      else bctx.drawImage(state.img, Math.round(r.sx), Math.round(r.sy), srcW, srcH, 0, 0, tw, th);
+      state.out = { w: tw, h: th };
+      setSplit(50);
+      if (state.fitMode) zoomFit(); else setZoom(state.zoom);
+      const sec = ((performance.now() - t0) / 1000).toFixed(1);
+      $('info2').textContent = `สร้างเสร็จใน ${sec} วินาที · ${nf(tw)}×${nf(th)} px · ${state.dpi} DPI`;
+      updateSizes(); estimateBytes();
+      toast('สร้างภาพตามขนาดแล้ว ✨ ลากวงกลมเทียบก่อน–หลังได้');
+    } catch (e) {
+      console.error(e); toast(e.message || 'สร้างภาพไม่สำเร็จ', true);
+    } finally {
+      state.busy = false; $('busy').classList.add('hidden'); refresh();
+    }
   }
 
   /* ---------- ขยายภาพ ---------- */
@@ -780,7 +1119,9 @@ body.embed .panel{position:static}
   const dlReady = inViewer ? window.claude.use('downloads').then(x => (downloads = x)).catch(() => null) : Promise.resolve(null);
   function save(type) {
     const mime = type === 'jpg' ? 'image/jpeg' : 'image/png';
-    const filename = `${state.name}_ขยาย${state.out ? String(state.scale).replace('.', ',') + 'x' : ''}.${type}`;
+    const filename = state.mode === 'fit'
+      ? `${state.name}_${state.fitW}x${state.fitH}.${type}`
+      : `${state.name}_ขยาย${state.out ? String(state.scale).replace('.', ',') + 'x' : ''}.${type}`;
     let src = afterC;
     if (type === 'jpg') {                       // JPG ไม่มีความโปร่งใส → รองพื้นขาวให้
       src = document.createElement('canvas'); src.width = afterC.width; src.height = afterC.height;
@@ -788,6 +1129,7 @@ body.embed .panel{position:static}
     }
     src.toBlob(async b => {
       if (!b) { toast('บันทึกไม่สำเร็จ', true); return; }
+      if (state.mode === 'fit' && state.dpi) { try { b = await ImageUp.setDpi(b, state.dpi); } catch (e) {} }
       if (inViewer) {
         await dlReady;
         if (!downloads) { toast('หน้านี้บันทึกไฟล์ไม่ได้ — คลิกขวาที่ภาพแล้วเลือกบันทึกภาพแทน', true); return; }
@@ -808,6 +1150,7 @@ body.embed .panel{position:static}
     const has = !!state.img, B = state.busy;
     $('runBtn').disabled = !has || B;
     $('savePng').disabled = $('saveJpg').disabled = !has || B;
+    $('fsBtn').disabled = B;
     $('newBtn').disabled = B;
   }
   function setPreset(p) {
@@ -833,12 +1176,47 @@ body.embed .panel{position:static}
     state.transparent = v;
     $('transSw').setAttribute('aria-checked', v);
     $('bgOpts').classList.toggle('hidden', !v);
+    if (v) closePops('bgOpts');
     if (v) toast('เปิดโหมดพื้นหลังโปร่งใส — กดขยายภาพแล้วบันทึกเป็น PNG');
   }
   $('transSw').onclick = () => setTransparent(!state.transparent);
   $('bgTol').oninput = e => { state.bgTol = +e.target.value; $('bgTolOut').textContent = state.bgTol; };
   $('bgFeather').oninput = e => { state.bgFeather = +e.target.value; $('bgFeatherOut').textContent = state.bgFeather + ' px'; };
-  $('runBtn').onclick = run;
+  function setMode(m) {
+    state.mode = m;
+    $('tabUp').setAttribute('aria-selected', m === 'up');
+    $('tabFit').setAttribute('aria-selected', m === 'fit');
+    $('upPanel').classList.toggle('hidden', m !== 'up');
+    $('fitPanel').classList.toggle('hidden', m !== 'fit');
+    $('runBtn').textContent = m === 'fit' ? '📐 สร้างภาพตามขนาดนี้' : '✨ ขยายภาพ';
+    drawHelp();
+    $('bar').classList.toggle('hidden', false);
+    if (m === 'fit') { updateFitInfo(); renderFitPreview(); }
+    else if (state.img) { beforeC.width = afterC.width = state.w; beforeC.height = afterC.height = state.h;
+      bctx.drawImage(state.img, 0, 0); actx.drawImage(state.img, 0, 0); state.out = null; setSplit(50); zoomFit(); updateSizes(); }
+    refresh();
+  }
+  $('tabUp').onclick = () => setMode('up');
+  $('tabFit').onclick = () => setMode('fit');
+  document.querySelectorAll('#fitSeg button').forEach(b => b.onclick = () => {
+    state.fit = b.dataset.f;
+    document.querySelectorAll('#fitSeg button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    $('bgWrap').classList.toggle('hidden', state.fit !== 'contain');
+    $('zoomWrap').classList.toggle('hidden', state.fit !== 'cover');
+    renderFitPreview();
+  });
+  $('fitBg').onchange = e => {
+    state.fitBg = e.target.value;
+    $('fitBgColor').classList.toggle('hidden', e.target.value !== 'custom');
+    renderFitPreview();
+  };
+  $('fitBgColor').oninput = () => renderFitPreview();
+  $('cropZoom').oninput = e => { state.cropZoom = +e.target.value / 100; $('cropZoomOut').textContent = e.target.value + '%'; renderFitPreview(); };
+  $('centerBtn').onclick = () => { state.cx = 0.5; state.cy = 0.5; renderFitPreview(); toast('จัดภาพกึ่งกลางแล้ว'); };
+  ['cw', 'ch'].forEach(id => $(id).oninput = readCustomInputs);
+  $('unit').onchange = () => syncCustomInputs();
+  $('dpi').onchange = () => { state.dpi = +$('dpi').value; syncCustomInputs(); updateFitInfo(); };
+  $('runBtn').onclick = () => (state.mode === 'fit' ? runFit() : run());
   $('savePng').onclick = () => save('png');
   $('saveJpg').onclick = () => save('jpg');
   $('quality').onchange = () => { if (state.out) estimateBytes(); };
@@ -846,14 +1224,72 @@ body.embed .panel{position:static}
   $('file').onchange = e => { loadFile(e.target.files[0]); e.target.value = ''; };
   $('demoBtn').onclick = e => { e.stopPropagation(); makeDemo(); };
   $('empty').onclick = () => EMBED ? toParent({ type: 'pick' }) : $('file').click();
-  $('helpToggle').onclick = () => {
-    const box = $('helpBox'), open = box.classList.contains('collapsed');
-    box.classList.toggle('collapsed', !open);
-    $('helpToggle').textContent = open ? 'ซ่อน' : 'แสดง';
-    $('helpToggle').setAttribute('aria-expanded', open);
-    try { localStorage.setItem('up_help_open', open ? '1' : '0'); } catch (e) {}
+  const HELP = {
+    up: { steps: ['1. เลือกรูป (ลากวาง / คลิก / Ctrl+V)', '2. เลื่อนแถบขนาด หรือพิมพ์ตัวเลข ×', '3. เลือกชนิดภาพให้ตรงงาน',
+                  '4. กด ✨ ขยายภาพ', '5. ลากวงกลม ⇆ เทียบก่อน–หลัง', '6. บันทึก PNG หรือ JPG'],
+          tip: '💡 ขยาย 2 เท่าได้ผลดีที่สุด · ปุ่ม − + มุมขวาล่างไว้ซูมดูใกล้ ๆ (ตอนซูมใช้ปุ่มลูกศรเลื่อนดูภาพได้) · ⛶ เต็มจอเมื่ออยากเห็นภาพใหญ่สุด' },
+    fit: { steps: ['1. เลือกรูป', '2. เลือกขนาดปลายทาง (หรือกำหนดเอง px/นิ้ว/ซม.)', '3. เลือก ครอปให้เต็ม หรือ ใส่ทั้งภาพ',
+                   '4. ลากภาพเลือกจุดสำคัญ + ซูมในกรอบ', '5. กด 📐 สร้างภาพตามขนาดนี้', '6. บันทึก (ไฟล์ฝังค่า DPI ให้แล้ว)'],
+           tip: '💡 รูปติดบัตรใช้ “ครอปให้เต็ม” · ปุ่มลูกศรเลื่อนจุดสำคัญในกรอบทีละนิด (Shift = เลื่อนไกลขึ้น) · ภาพลงสไลด์ที่ห้ามตัดตัวคนใช้ “ใส่ทั้งภาพ” แล้วเลือกขอบเบลอ' },
   };
-  try { if (localStorage.getItem('up_help_open') === '0') $('helpToggle').click(); } catch (e) {}
+  function drawHelp() {
+    const h = HELP[state.mode] || HELP.up;
+    $('helpSteps').innerHTML = h.steps.map(t => `<span class="step">${t}</span>`).join('');
+    $('helpTip').innerHTML = h.tip + '<br>⌨️ Enter เริ่มทำงาน · Ctrl+S บันทึก PNG · Ctrl+J บันทึก JPG · − + ซูม · 0 พอดีจอ · F เต็มจอ';
+  }
+  function setHelpOpen(open) {
+    $('helpBox').classList.toggle('collapsed', !open);
+    $('helpToggle').setAttribute('aria-expanded', open);
+    $('helpToggle').textContent = open ? '📖 ซ่อนวิธีใช้' : '📖 วิธีใช้';
+    try { localStorage.setItem('up_help_open', open ? '1' : '0'); } catch (e) {}
+  }
+  $('helpToggle').onclick = () => setHelpOpen($('helpBox').classList.contains('collapsed'));
+  // จอแคบ: พับวิธีใช้ไว้ก่อน (ถ้าผู้ใช้ยังไม่เคยเลือกเอง) เพื่อให้เห็นภาพมากที่สุด
+  let helpOpen = document.documentElement.clientWidth >= 760;
+  try { const v = localStorage.getItem('up_help_open'); if (v !== null) helpOpen = v !== '0'; } catch (e) {}
+  setHelpOpen(helpOpen); drawHelp();
+
+  /* ---------- ป็อปอัปตั้งค่าละเอียด ---------- */
+  function closePops(except) {
+    ['advPop', 'bgOpts'].forEach(id => { if (id !== except) $(id).classList.add('hidden'); });
+    $('advBtn').setAttribute('aria-expanded', except === 'advPop');
+  }
+  $('advBtn').onclick = e => {
+    e.stopPropagation();
+    const open = $('advPop').classList.contains('hidden');
+    closePops(open ? 'advPop' : null);
+    $('advPop').classList.toggle('hidden', !open);
+    $('advBtn').setAttribute('aria-expanded', open);
+  };
+  document.addEventListener('pointerdown', e => {
+    if (!e.target.closest('.pop-wrap')) closePops(null);
+  });
+
+  /* ---------- โหมดเต็มจอ (ใช้ได้ทั้งหน้าเดี่ยวและในกรอบ DocDesk) ---------- */
+  function fsOn() { return !!document.fullscreenElement || document.body.classList.contains('expanded'); }
+  async function toggleFull() {
+    if (fsOn()) {
+      if (document.fullscreenElement) { try { await document.exitFullscreen(); } catch (e) {} }
+      document.body.classList.remove('expanded');
+      if (EMBED) { toParent({ type: 'expand', on: false }); setTimeout(() => window.__postHeight && window.__postHeight(true), 150); }
+    } else {
+      let ok = false;
+      try { await $('app').requestFullscreen(); ok = true; } catch (e) { ok = false; }
+      if (!ok) {                       // เบราว์เซอร์/กรอบไม่ให้เต็มจอ → ขยายเต็มพื้นที่แทน
+        document.body.classList.add('expanded');
+        if (EMBED) toParent({ type: 'expand', on: true });
+      }
+    }
+    setTimeout(() => { if (state.img) { state.fitMode ? zoomFit() : setZoom(state.zoom); } updateFsBtn(); }, 120);
+  }
+  function updateFsBtn() { $('fsBtn').textContent = fsOn() ? '⛶ ออกจากเต็มจอ' : '⛶ เต็มจอ'; }
+  $('fsBtn').onclick = toggleFull;
+  document.addEventListener('fullscreenchange', () => { updateFsBtn(); if (state.img && state.fitMode) setTimeout(zoomFit, 80); });
+  window.addEventListener('keydown', e => {
+    if (e.target.matches('input,select,textarea')) return;
+    if (e.key === 'Escape' && fsOn()) toggleFull();      // ออกได้ทั้งเต็มจอจริงและโหมดขยายกรอบ
+    else if (e.key === 'f' || e.key === 'F') toggleFull();
+  });
 
   const view = $('view');
   view.addEventListener('dragover', e => { e.preventDefault(); });
@@ -892,15 +1328,22 @@ body.embed .panel{position:static}
       if (d.type === 'viewport' && d.h) document.documentElement.style.setProperty('--boxh', Math.round(Math.min(640, Math.max(280, d.h * 0.55))) + 'px');
     });
     let lastH = 0;
-    new ResizeObserver(() => {
+    const postHeight = force => {
+      if (fsOn()) return;                       // ตอนเต็มจอ ไม่ต้องบอกความสูง (กรอบจะค้างสูงผิด)
       const h = Math.ceil(document.documentElement.scrollHeight);
-      if (Math.abs(h - lastH) > 2) { lastH = h; toParent({ type: 'height', h }); }
-    }).observe(document.body);
+      if (force || Math.abs(h - lastH) > 2) { lastH = h; toParent({ type: 'height', h }); }
+    };
+    new ResizeObserver(() => postHeight(false)).observe(document.body);
+    document.addEventListener('fullscreenchange', () => setTimeout(() => postHeight(true), 150));
+    window.__postHeight = postHeight;
     toParent({ type: 'ready' });
   }
 
   setPreset('photo');
   setScale(2);
+  buildPresets();
+  setPreset2('id15');
+  setMode('up');
   refresh();
   window.__upTest = {
     makeDemo,
@@ -909,6 +1352,9 @@ body.embed .panel{position:static}
                     levels: state.levels, sat: state.sat, busy: state.busy,
                     transparent: state.transparent, bgTol: state.bgTol, bgFeather: state.bgFeather,
                     zoom: state.zoom, zoomed: $('compare').classList.contains('zoomed'),
+                    full: fsOn(), helpOpen: !$('helpBox').classList.contains('collapsed'),
+                    mode: state.mode, fitW: state.fitW, fitH: state.fitH, dpi: state.dpi,
+                    fit: state.fit, fitBg: state.fitBg, cropZoom: state.cropZoom, cx: +state.cx.toFixed(3), cy: +state.cy.toFixed(3),
                     split: getComputedStyle($('compare')).getPropertyValue('--split').trim() }),
   };
 })();

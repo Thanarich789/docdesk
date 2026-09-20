@@ -136,6 +136,8 @@ header{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:
   border:1px solid var(--line);display:grid;place-items:center;font-size:9px;font-weight:700;color:var(--muted)}
 .files .th img{width:100%;height:100%;object-fit:cover;display:block}
 .upscale-frame{display:block;width:100%;height:700px;border:0;margin-top:14px;background:transparent;color-scheme:normal}
+.eraser-frame.expanded,.upscale-frame.expanded{position:fixed;inset:0;width:100vw;height:100dvh;margin:0;z-index:9999;background:var(--paper)}
+body.frame-expanded{overflow:hidden}
 .eraser-frame{display:block;width:100%;height:640px;border:0;margin-top:14px;background:transparent;color-scheme:normal}
 .pv{display:flex;gap:14px;align-items:center;margin-top:14px;padding:12px;background:var(--surface);
   border:1px solid var(--line);border-radius:var(--r)}
@@ -199,7 +201,12 @@ input[type=color]{width:46px;height:38px;padding:2px;border:1px solid var(--line
     linear-gradient(45deg,transparent 75%,#c9c4d6 75%),linear-gradient(-45deg,transparent 75%,#c9c4d6 75%);
   background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;background-color:#efedf4}
 .preview canvas{display:block;max-width:100%;height:auto;margin:0 auto;cursor:crosshair;border-radius:6px}
-.pagenav{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.pagenav{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.zoomgrp{display:flex;align-items:center;gap:3px;border:1px solid var(--line);border-radius:9px;padding:2px}
+.zoomgrp button{min-width:30px}
+.zoomgrp span{font-size:12.5px;min-width:46px;text-align:center;font-variant-numeric:tabular-nums}
+.editscroll{overflow:auto;max-width:100%;border-radius:8px}
+.editstage.zoomed{max-width:none}
 .editstage{position:relative;display:inline-block;max-width:100%;touch-action:none;user-select:none;
   background:#fff;border-radius:6px;overflow:hidden}
 .editstage canvas{display:block;max-width:100%;height:auto}
@@ -782,8 +789,8 @@ const TOOLS=[
  {id:"num", g:"pdf",    c:"--c-num",   ic:"num",   t:"ใส่เลขหน้า",    s:"เลือกรูปแบบ ตำแหน่ง และข้ามหน้าปกได้",     d:"เช่น 1 · 1/10 · หน้า 1 จาก 10 วางได้ 3 ตำแหน่ง"},
  {id:"conv", g:"img",   c:"--c-conv",  ic:"conv",  t:"แปลงรูปภาพ",    s:"HEIC/TIFF/AVIF ↔ JPG · ย่อขนาด · บีบอัด ทีละหลายไฟล์",d:"แปลงฟอร์แมต ย่อขนาด และลดขนาดไฟล์ พร้อมกันหลายรูป"},
  {id:"bg", g:"img",     c:"--c-bg",    ic:"bg",    t:"ลบพื้นหลัง",    s:"ทำพื้นหลังโปร่งใส หรือเปลี่ยนเป็นสีใหม่",  d:"เห็นผลทันทีขณะปรับค่า แล้วบันทึกเป็น PNG โปร่งใสหรือใส่พื้นหลังใหม่"},
- {id:"up",   g:"img",   c:"--c-up",    ic:"up",    t:"ขยายภาพให้ชัด", s:"ขยายภาพเล็ก/เบลอ ให้ใหญ่ขึ้นสูงสุด 4 เท่า",d:"ขยายด้วย Lanczos พร้อมลับคม ลดจุดรบกวน ปรับแสง — มีแถบเลื่อนเทียบก่อน-หลัง ประมวลผลในเครื่อง"},
- {id:"erase", g:"img",  c:"--c-erase", ic:"erase", t:"ลบวัตถุในภาพ",  s:"ลบคน สิ่งของ ลายน้ำ ด้วย AI · Magic · Lasso",d:"เลือกสิ่งที่ไม่ต้องการ แล้วระบบเติมพื้นที่ให้กลมกลืนกับภาพ — ประมวลผลในเครื่อง ไม่อัปโหลดรูป"},
+ {id:"up",   g:"img",   c:"--c-up",    ic:"up",    t:"ขยาย/ปรับขนาดภาพ", s:"ขยายให้ชัดขึ้น 4 เท่า หรือปรับเป็นขนาดรูปติดบัตร A4 สไลด์",d:"2 โหมด — ขยายภาพเล็กให้คมด้วย Lanczos+ลับคม · ปรับขนาดตามสื่อ (รูปติดบัตร A4 สไลด์ ป้าย) พร้อมฝังค่า DPI ให้โรงพิมพ์"},
+ {id:"erase", g:"img",  c:"--c-erase", ic:"erase", t:"ลบ/ย้ายวัตถุในภาพ",s:"ลบคน สิ่งของ ลายน้ำ · ย้ายวัตถุ · ลบพื้นหลัง",d:"เลือกวัตถุด้วย AI / Magic / Lasso แล้วลบออก ย้ายไปวางใหม่ หรือเก็บไว้แล้วลบพื้นหลัง — ประมวลผลในเครื่อง"},
  {id:"zip", g:"pdf",    c:"--c-zip",   ic:"zip",   t:"บีบอัด PDF",    s:"ลดขนาดไฟล์ให้ส่งอีเมลได้ เลือกได้ 3 ระดับ",d:"ลดขนาดไฟล์สแกน บอกขนาดก่อน–หลังให้ดูก่อนบันทึก"},
  {id:"lock", g:"pdf",   c:"--c-lock",  ic:"lock",  t:"รหัสผ่าน",      s:"ใส่รหัสล็อกไฟล์ หรือปลดรหัสที่มีอยู่",    d:"เข้ารหัส AES-256 กำหนดสิทธิ์พิมพ์/คัดลอกได้ และปลดรหัสเมื่อรู้รหัสเดิม"},
  {id:"crop", g:"pdf",   c:"--c-crop",  ic:"crop",  t:"ครอบตัดหน้า",   s:"ลากกรอบเลือกพื้นที่เองได้ เห็นผลทันที",d:"ลากกรอบบนภาพตัวอย่างเพื่อเลือกพื้นที่ที่จะเก็บไว้"},
@@ -803,7 +810,7 @@ const CATS=[
    ic:'<path d="M6.2 2.8h6.6L18.2 8.2v12.1a.9.9 0 0 1-.9.9H6.2a.9.9 0 0 1-.9-.9V3.7a.9.9 0 0 1 .9-.9z"/><path d="M12.8 2.8v5.4h5.4"/>'},
   {g:"conv",t:"แปลงไฟล์",    c:"--c-x2xl", s:"PDF กับ Excel Word รูปภาพ ข้อความ",
    ic:'<path d="M20.4 10.4a8.4 8.4 0 0 1-12.6 7"/><path d="M3.6 13.6a8.4 8.4 0 0 1 12.6-7"/><path d="m20.6 6.6.2 3.9-3.9.2"/><path d="m3.4 17.4-.2-3.9 3.9-.2"/>'},
-  {g:"img", t:"รูปภาพ",      c:"--c-conv", s:"ขยายภาพให้ชัด แปลงนามสกุล ย่อขนาด ลบพื้นหลัง ลบวัตถุ",
+  {g:"img", t:"รูปภาพ",      c:"--c-conv", s:"ขยาย/ปรับขนาดภาพ แปลงนามสกุล ลบพื้นหลัง ลบ/ย้ายวัตถุ",
    ic:'<path d="M3.4 5.2h17.2v13.6H3.4z"/><circle cx="8.4" cy="10" r="1.6"/><path d="m3.4 16.4 5-4.4 3.8 3.2 3-2.4 5.4 4.2"/>'}
 ];
 
@@ -1698,13 +1705,38 @@ BUILD.edit=function(body){
   bUndo.title="ย้อนกลับ";bDel.title="ลบชิ้นที่เลือก";
   nav.appendChild(bPrev);nav.appendChild(lbl);nav.appendChild(bNext);
   const sp=el("span");sp.style.flex="1";nav.appendChild(sp);
+  /* ---- ปุ่มย่อ/ขยายมุมมอง (ไม่กระทบไฟล์ PDF จริง) ---- */
+  const zg=el("div","zoomgrp");
+  const bZo=el("button","mini","−"),bZp=el("span","","100%"),bZi=el("button","mini","+"),bZf=el("button","mini","พอดีจอ");
+  bZo.title="ย่อมุมมอง";bZi.title="ขยายมุมมอง";bZf.title="ให้พอดีความกว้าง";
+  zg.appendChild(bZo);zg.appendChild(bZp);zg.appendChild(bZi);zg.appendChild(bZf);
+  nav.appendChild(zg);
   nav.appendChild(bUndo);nav.appendChild(bDel);
   stageWrap.appendChild(nav);
+  const scroll=el("div","editscroll");
   const stage=el("div","editstage");
   const cv=el("canvas");stage.appendChild(cv);
   const layer=el("div","editlayer");stage.appendChild(layer);
-  stageWrap.appendChild(stage);
-  stageWrap.appendChild(el("div","hint","เลือกเครื่องมือแล้วลากบนหน้ากระดาษ · แตะชิ้นงานเพื่อเลือก แล้วลากย้ายหรือย่อขยายที่มุมขวาล่าง"));
+  scroll.appendChild(stage);
+  stageWrap.appendChild(scroll);
+  let zoom=1;
+  function applyZoom(){
+    stage.classList.toggle("zoomed",zoom>1.001);
+    stage.style.width=zoom>1.001?(cv.width*zoom)+"px":"";
+    cv.style.width=zoom>1.001?"100%":"";
+    bZp.textContent=Math.round(zoom*100)+"%";
+    bZo.disabled=zoom<=0.5;bZi.disabled=zoom>=4;
+    scroll.style.maxHeight=zoom>1.001?"min(70vh,620px)":"";
+  }
+  const setZoom=z=>{zoom=Math.max(.5,Math.min(4,z));applyZoom();};
+  bZi.onclick=()=>setZoom(zoom*1.25);
+  bZo.onclick=()=>setZoom(zoom/1.25);
+  bZf.onclick=()=>setZoom(1);
+  scroll.addEventListener("wheel",ev=>{
+    if(!(ev.ctrlKey||ev.metaKey))return;
+    ev.preventDefault();setZoom(zoom*(ev.deltaY<0?1.12:1/1.12));
+  },{passive:false});
+  stageWrap.appendChild(el("div","hint","เลือกเครื่องมือแล้วลากบนหน้ากระดาษ · แตะชิ้นงานเพื่อเลือก แล้วลากย้ายหรือย่อขยายที่มุมขวาล่าง · ใช้ปุ่ม − + ขยายมุมมองเพื่อทำงานละเอียด (Ctrl+ล้อเมาส์ก็ได้)"));
   body.appendChild(stageWrap);
 
   /* ---- แถบตั้งค่าชิ้นที่เลือก ---- */
@@ -1732,6 +1764,7 @@ BUILD.edit=function(body){
     const vp=p.getViewport({scale:scale});
     cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);
     await p.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
+    applyZoom();
     lbl.textContent="หน้า "+(pg+1)+" / "+total;
     bPrev.disabled=pg===0;bNext.disabled=pg===total-1;
     paint();
@@ -2248,7 +2281,8 @@ BUILD.shrink=function(body){
 let upMsg=null,upResize=null;
 BUILD.up=function(body){
   const frame=el("iframe","upscale-frame");
-  frame.title="เครื่องมือขยายภาพให้ชัด";
+  frame.title="เครื่องมือขยาย/ปรับขนาดภาพ";
+  frame.setAttribute("allow","fullscreen");
   frame.src="upscaler.html?embed=1";
   let ready=false, pending=null;
   const target=location.protocol==="file:"?"*":location.origin;
@@ -2272,8 +2306,14 @@ BUILD.up=function(body){
     const d=ev.data||{};
     if(d.src!=="docdesk-upscale")return;
     if(d.type==="ready"){ready=true;sendViewport();if(pending){send(pending);pending=null;}}
-    if(d.type==="height"&&d.h)frame.style.height=Math.max(460,Math.ceil(d.h))+"px";
+    if(d.type==="height"&&d.h&&!frame.classList.contains("expanded"))frame.style.height=Math.max(460,Math.ceil(d.h))+"px";
     if(d.type==="pick"){const inp=dz.nextElementSibling;if(inp&&inp.type==="file")inp.click();}
+    /* ขยายกรอบให้เต็มหน้าจอเมื่อผู้ใช้กดปุ่มเต็มจอในเครื่องมือ */
+    if(d.type==="expand"){
+      frame.classList.toggle("expanded",!!d.on);
+      document.body.classList.toggle("frame-expanded",!!d.on);
+      if(!d.on)sendViewport();
+    }
   };
   window.addEventListener("message",upMsg);
   if(upResize)window.removeEventListener("resize",upResize);
@@ -2287,7 +2327,8 @@ BUILD.up=function(body){
 let eraserMsg=null,eraserResize=null;
 BUILD.erase=function(body){
   const frame=el("iframe","eraser-frame");
-  frame.title="เครื่องมือลบวัตถุในภาพ";
+  frame.title="เครื่องมือลบ/ย้ายวัตถุในภาพ";
+  frame.setAttribute("allow","fullscreen");
   frame.src="eraser.html?embed=1";
   let ready=false, pending=null;
   const target=location.protocol==="file:"?"*":location.origin;
@@ -2313,8 +2354,13 @@ BUILD.erase=function(body){
     const d=ev.data||{};
     if(d.src!=="docdesk-eraser")return;
     if(d.type==="ready"){ready=true;sendViewport();if(pending){send(pending);pending=null;}}
-    if(d.type==="height"&&d.h)frame.style.height=Math.max(420,Math.ceil(d.h))+"px";
+    if(d.type==="height"&&d.h&&!frame.classList.contains("expanded"))frame.style.height=Math.max(420,Math.ceil(d.h))+"px";
     if(d.type==="pick"){const inp=dz.nextElementSibling;if(inp&&inp.type==="file")inp.click();}
+    if(d.type==="expand"){
+      frame.classList.toggle("expanded",!!d.on);
+      document.body.classList.toggle("frame-expanded",!!d.on);
+      if(!d.on)sendViewport();
+    }
   };
   window.addEventListener("message",eraserMsg);
   if(eraserResize)window.removeEventListener("resize",eraserResize);
