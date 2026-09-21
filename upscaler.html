@@ -1130,6 +1130,7 @@ body.expanded .view{height:auto;flex:1 1 auto}
     src.toBlob(async b => {
       if (!b) { toast('บันทึกไม่สำเร็จ', true); return; }
       if (state.mode === 'fit' && state.dpi) { try { b = await ImageUp.setDpi(b, state.dpi); } catch (e) {} }
+      if (EMBED) { try { toParent({ type: 'result', blob: b, name: filename }); } catch (e) {} }
       if (inViewer) {
         await dlReady;
         if (!downloads) { toast('หน้านี้บันทึกไฟล์ไม่ได้ — คลิกขวาที่ภาพแล้วเลือกบันทึกภาพแทน', true); return; }

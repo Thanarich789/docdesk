@@ -1963,6 +1963,7 @@ self.onmessage = async e => {
     }
     src.toBlob(async b => {
       if (!b) { toast('บันทึกไม่สำเร็จ', true); return; }
+      if (EMBED) { try { toParent({ type: 'result', blob: b, name: filename }); } catch (e) {} }
       if (inViewer) {
         await dlReady;
         if (!downloads) { toast('หน้านี้บันทึกไฟล์ไม่ได้ — คลิกขวาที่ภาพ แล้วเลือกบันทึกภาพแทน', true); return; }
