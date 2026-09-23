@@ -2632,6 +2632,7 @@ BUILD.studio=function(body){
   function buildConvert(){
     const cv=el("canvas","st-canvas");stage.appendChild(cv);
     const ar=workC.width/workC.height;
+    const hasAlpha=ext=>!!ALPHA_OK[ext]||ext==="ai";
     function drawPreview(w,h,ext,bg){
       const c=el("canvas");c.width=w;c.height=h;const x=c.getContext("2d");
       if(bg){x.fillStyle=bg;x.fillRect(0,0,w,h);}
@@ -2640,7 +2641,7 @@ BUILD.studio=function(body){
       const sc=Math.min(1,pd/w,pd/h);
       cv.width=Math.round(w*sc);cv.height=Math.round(h*sc);
       const cx=cv.getContext("2d");
-      if(!ALPHA_OK[ext]){cx.drawImage(c,0,0,cv.width,cv.height);}
+      if(!hasAlpha(ext)){cx.drawImage(c,0,0,cv.width,cv.height);}
       else{
         cx.clearRect(0,0,cv.width,cv.height);
         for(let yy=0;yy<cv.height;yy+=10)for(let xx=0;xx<cv.width;xx+=10)
@@ -2663,15 +2664,17 @@ BUILD.studio=function(body){
         '<option value="bmp">BMP — ระบบเก่า/เครื่องจักร</option>'+
         '<option value="gif">GIF — 256 สี เว็บเก่า</option>'+
         '<option value="ico">ICO — ไอคอนโปรแกรม</option>'+
-        '<option value="svg">SVG — ห่อภาพไว้ใน SVG</option></select>'+
+        '<option value="svg">SVG — ห่อภาพไว้ใน SVG</option>'+
+        '<option value="ai">AI — เปิดใน Illustrator ได้ (ห่อรูปไว้ใน PDF)</option></select>'+
       '<div id="qw" style="margin-top:10px;display:none"><label class="f">คุณภาพ <b id="qv">85%</b></label><input type="range" id="q" min="40" max="100" value="85"></div>'+
       '<div id="tOpt" style="margin-top:10px"><label class="chk"><input type="checkbox" id="tr" checked> พื้นหลังโปร่งใส</label></div>'+
-      '<div id="cOpt" style="display:none;margin-top:10px"><label class="f">สีพื้นหลังแทนความโปร่งใส</label><input type="color" id="bgc" value="#FFFFFF"></div>';
+      '<div id="cOpt" style="display:none;margin-top:10px"><label class="f">สีพื้นหลังแทนความโปร่งใส</label><input type="color" id="bgc" value="#FFFFFF"></div>'+
+      '<div id="aiNote" class="note" style="display:none">ไฟล์ .ai นี้คือรูปเดิมห่อไว้ใน PDF ที่ Illustrator เปิดได้ — ยังเป็นภาพพิกเซล ไม่ใช่เส้นเวกเตอร์ (เหมาะเอาไปวางต่อในงาน Illustrator)</div>';
     const wI=$("#cw",panelR),hI=$("#ch",panelR),extSel=$("#ext",panelR),qEl=$("#q",panelR);
     function refresh(){
       const ext=extSel.value;
       const w=Math.max(1,+wI.value||workC.width),h=Math.max(1,+hI.value||workC.height);
-      const bg=ALPHA_OK[ext]?($("#tr",panelR).checked?null:"#FFFFFF"):$("#bgc",panelR).value;
+      const bg=hasAlpha(ext)?($("#tr",panelR).checked?null:"#FFFFFF"):$("#bgc",panelR).value;
       drawPreview(w,h,ext,bg);
     }
     wI.oninput=()=>{if($("#lock",panelR).checked)hI.value=Math.round(wI.value/ar);refresh();};
@@ -2680,8 +2683,9 @@ BUILD.studio=function(body){
     extSel.onchange=()=>{
       const ext=extSel.value;
       $("#qw",panelR).style.display=QUALITY_OK[ext]?"":"none";
-      $("#tOpt",panelR).style.display=ALPHA_OK[ext]?"":"none";
-      $("#cOpt",panelR).style.display=ALPHA_OK[ext]?"none":"";
+      $("#tOpt",panelR).style.display=hasAlpha(ext)?"":"none";
+      $("#cOpt",panelR).style.display=hasAlpha(ext)?"none":"";
+      $("#aiNote",panelR).style.display=ext==="ai"?"":"none";
       refresh();
     };
     extSel.onchange();
@@ -2691,8 +2695,17 @@ BUILD.studio=function(body){
     dl.onclick=async()=>{
       const ext=extSel.value;
       const w=Math.max(1,+wI.value||workC.width),h=Math.max(1,+hI.value||workC.height);
-      const bg=ALPHA_OK[ext]?($("#tr",panelR).checked?null:"#FFFFFF"):$("#bgc",panelR).value;
+      const bg=hasAlpha(ext)?($("#tr",panelR).checked?null:"#FFFFFF"):$("#bgc",panelR).value;
       const c=drawPreview(w,h,ext,bg);
+      if(ext==="ai"){
+        const pngBlob=await canvasToBlob(c,"png");
+        const out=await PDFLib.PDFDocument.create();
+        const img=await out.embedPng(new Uint8Array(await pngBlob.arrayBuffer()));
+        const p=out.addPage([w,h]);
+        p.drawImage(img,{x:0,y:0,width:w,height:h});
+        save(new Blob([await out.save()],{type:"application/postscript"}),stem(fileName)+"_"+w+"x"+h+".ai");
+        return;
+      }
       const blob=await canvasToBlob(c,ext,QUALITY_OK[ext]?+qEl.value/100:undefined);
       save(blob,stem(fileName)+"_"+w+"x"+h+"."+ext);
     };
