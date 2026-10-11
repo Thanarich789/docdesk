@@ -846,7 +846,7 @@ const TOOLS=[
  {id:"edit", g:"pdf",   c:"--c-edit",  ic:"edit",  t:"แก้ไข PDF",     s:"ปิดทับ · ไฮไลต์ · พิมพ์ข้อความ · เซ็นชื่อ · แปะรูป",d:"วางทับบนหน้าเดิมได้ทุกอย่าง ย้ายและย่อขยายได้ พร้อมปุ่มย้อนกลับ"},
  {id:"x2xl", g:"conv",   c:"--c-x2xl",  ic:"x2xl",  t:"PDF → Excel",   s:"ตรวจจับตารางในไฟล์ PDF แล้วบันทึกเป็น .xlsx หรือ .csv",d:"อ่านพิกัดตัวอักษรเพื่อจับเป็นตาราง ปรับความไวได้ ตัวเลขนำไปคำนวณต่อใน Excel ได้"},
  {id:"x2wd", g:"conv",   c:"--c-x2wd",  ic:"x2wd",  t:"PDF → Word",    s:"แปลงเป็นเอกสาร .doc แก้ไขได้ คงหัวข้อและย่อหน้า",d:"เลือกได้ทั้งโหมดข้อความไหลและโหมดคงตาราง พร้อมดูตัวอย่างก่อนบันทึก"},
- {id:"studio", g:"img", c:"--c-studio",ic:"studio",t:"Image Studio ✨",s:"ครอบตัด · ปรับขนาด · ลบพื้นหลัง · ลบวัตถุ · แปลงไฟล์ · ย่อไฟล์ ในหน้าเดียว",d:"แก้รูปต่อเนื่องหลายขั้นตอนบนรูปเดิม ไม่ต้องอัปโหลดซ้ำ เสร็จเมื่อไหร่ดาวน์โหลดได้ทันที"}
+ {id:"studio", g:"img", c:"--c-studio",ic:"studio",t:"Image Studio ✨",s:"ครอบตัด · ปรับขนาด · ลบพื้นหลัง · ลบวัตถุ · รวมรูปเป็น PDF · แปลงไฟล์ · ย่อไฟล์ ในหน้าเดียว",d:"แก้รูปต่อเนื่องหลายขั้นตอนบนรูปเดิม ไม่ต้องอัปโหลดซ้ำ เสร็จเมื่อไหร่ดาวน์โหลดได้ทันที"}
 ];
 const grid=$("#grid");
 
@@ -2388,6 +2388,7 @@ BUILD.studio=function(body){
     ["resize","ปรับขนาด/ขยาย","--c-up","up"],
     ["bg","ลบพื้นหลัง","--c-bg","bg"],
     ["erase","ลบวัตถุ","--c-erase","erase"],
+    ["combine","รวมรูปเป็น PDF","--c-merge","merge"],
     ["convert","แปลง/ดาวน์โหลด","--c-conv","conv"],
     ["shrink","ย่อไฟล์","--c-shrink","shrink"]
   ];
@@ -2405,7 +2406,7 @@ BUILD.studio=function(body){
   main.appendChild(bodyRow);
 
   const histBar=el("div","st-hist");main.appendChild(histBar);
-  const keyNote=el("div","note","ปุ่มลัด: Esc กลับหน้ารวม · Ctrl+Z ย้อนกลับ · 1-6 สลับโหมด · แตะประวัติด้านล่างเพื่อย้อนไปจุดนั้น");
+  const keyNote=el("div","note","ปุ่มลัด: Esc กลับหน้ารวม · Ctrl+Z ย้อนกลับ · 1-7 สลับโหมด · แตะประวัติด้านล่างเพื่อย้อนไปจุดนั้น");
   keyNote.style.cssText="margin-top:2px;font-size:11.5px";
   main.appendChild(keyNote);
 
@@ -2437,7 +2438,7 @@ BUILD.studio=function(body){
     crop=null;renderHistory();renderCurrent();
   }
 
-  /* ---------- คีย์ลัด: Esc กลับ · Ctrl/Cmd+Z ย้อนกลับ · 1-6 สลับโหมด ---------- */
+  /* ---------- คีย์ลัด: Esc กลับ · Ctrl/Cmd+Z ย้อนกลับ · 1-7 สลับโหมด ---------- */
   const isTyping=()=>{
     const a=document.activeElement;
     return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT"||a.isContentEditable));
@@ -2449,7 +2450,7 @@ BUILD.studio=function(body){
     }
     if(isTyping()||!workC)return;
     if((ev.ctrlKey||ev.metaKey)&&ev.key.toLowerCase()==="z"){ev.preventDefault();undo();return;}
-    const idx="123456".indexOf(ev.key);
+    const idx="1234567".indexOf(ev.key);
     if(idx>=0&&idx<MODES.length)selectMode(MODES[idx][0]);
   };
   document.addEventListener("keydown",studioKeyHandler);
@@ -2482,6 +2483,7 @@ BUILD.studio=function(body){
     closeIframe();stage.innerHTML="";panelR.innerHTML="";
     if(m==="crop")buildCrop();
     else if(m==="bg")buildBg();
+    else if(m==="combine")buildCombine();
     else if(m==="convert")buildConvert();
     else if(m==="shrink")buildShrink();
     else buildIframe(m);
@@ -2747,6 +2749,72 @@ BUILD.studio=function(body){
       setTimeout(()=>dl.textContent=old,2200);
     };
     panelR.appendChild(dl);
+  }
+
+  /* ================= รวมรูปหลายใบเป็นไฟล์ PDF เดียว ================= */
+  function buildCombine(){
+    const items=[{name:fileName,canvas:workC}];
+    stage.appendChild(el("div","note","รูปแรกคือรูปที่เปิดอยู่ในสตูดิโอ — เพิ่มรูปอื่น จัดลำดับ แล้วกดสร้าง PDF หลายหน้า"));
+    const ul=el("ul","files");stage.appendChild(ul);
+    const thumb=(c,max)=>{
+      const s=Math.min(1,max/c.width,max/c.height);
+      const t=el("canvas");t.width=Math.max(1,Math.round(c.width*s));t.height=Math.max(1,Math.round(c.height*s));
+      t.getContext("2d").drawImage(c,0,0,t.width,t.height);
+      return t.toDataURL("image/jpeg",.7);
+    };
+    const dl=el("button","st-action","สร้าง PDF รวมรูปภาพ");
+    function renderList(){
+      ul.innerHTML="";
+      items.forEach((it,i)=>{
+        const li=el("li");
+        const th=el("span","th");const im=el("img");im.alt="";im.src=thumb(it.canvas,90);th.appendChild(im);li.appendChild(th);
+        li.appendChild(el("span","nm",(i+1)+". "+it.name+(it.canvas===workC?" (รูปที่เปิดอยู่)":"")));
+        li.appendChild(el("span","sz",it.canvas.width+"×"+it.canvas.height));
+        const up=el("button","mini","↑"),dn=el("button","mini","↓"),rm=el("button","mini","✕");
+        up.disabled=i===0;dn.disabled=i===items.length-1;rm.disabled=items.length<=1;
+        up.onclick=()=>{items.splice(i-1,0,items.splice(i,1)[0]);renderList();};
+        dn.onclick=()=>{items.splice(i+1,0,items.splice(i,1)[0]);renderList();};
+        rm.onclick=()=>{items.splice(i,1);renderList();};
+        li.appendChild(up);li.appendChild(dn);li.appendChild(rm);
+        ul.appendChild(li);
+      });
+      dl.disabled=items.length<2;
+    }
+    dropzone(stage,IMG_ACCEPT,true,async fs=>{
+      for(const f of fs){
+        try{items.push({name:f.name,canvas:await fileToCanvas(f)});}catch(e){}
+      }
+      renderList();
+    });
+    panelR.innerHTML=
+      '<label class="f">ขนาดหน้ากระดาษ</label><select id="sz">'+
+      '<option value="fit" selected>พอดีกับขนาดรูปแต่ละรูป</option>'+
+      '<option value="a4">A4 แนวตั้ง</option><option value="a4l">A4 แนวนอน</option></select>'+
+      '<label class="f" style="margin-top:10px">ระยะขอบ (พอยต์)</label><input type="number" id="mg" value="0" min="0" max="120">'+
+      '<div class="note" style="margin-top:10px">ต้องมีอย่างน้อย 2 รูปจึงจะรวมได้</div>';
+    dl.onclick=async()=>{
+      const mode=$("#sz",panelR).value,mg=Math.max(0,+$("#mg",panelR).value||0);
+      dl.disabled=true;const old=dl.textContent;dl.textContent="กำลังสร้าง…";
+      try{
+        const out=await PDFLib.PDFDocument.create();
+        for(const it of items){
+          const b=await canvasToBlob(it.canvas,"png");
+          const img=await out.embedPng(new Uint8Array(await b.arrayBuffer()));
+          let PW,PH;
+          if(mode==="fit"){PW=img.width+mg*2;PH=img.height+mg*2;}
+          else if(mode==="a4l"){PW=841.89;PH=595.28;}
+          else{PW=595.28;PH=841.89;}
+          const s=Math.min((PW-mg*2)/img.width,(PH-mg*2)/img.height),w=img.width*s,h=img.height*s;
+          out.addPage([PW,PH]).drawImage(img,{x:(PW-w)/2,y:(PH-h)/2,width:w,height:h});
+          await tick();
+        }
+        save(new Blob([await out.save()],{type:"application/pdf"}),stem(fileName)+"_รวม"+items.length+"รูป.pdf");
+        dl.textContent="สร้างแล้ว "+items.length+" หน้า";
+      }catch(e){dl.textContent="ผิดพลาด: "+(e.message||"สร้างไม่สำเร็จ");}
+      setTimeout(()=>{dl.textContent=old;renderList();},2200);
+    };
+    panelR.appendChild(dl);
+    renderList();
   }
 
   /* ================= ปรับขนาด(AI)/ลบวัตถุ — ฝัง iframe เดิม ================= */
