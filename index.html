@@ -846,7 +846,7 @@ const TOOLS=[
  {id:"edit", g:"pdf",   c:"--c-edit",  ic:"edit",  t:"แก้ไข PDF",     s:"ปิดทับ · ไฮไลต์ · พิมพ์ข้อความ · เซ็นชื่อ · แปะรูป",d:"วางทับบนหน้าเดิมได้ทุกอย่าง ย้ายและย่อขยายได้ พร้อมปุ่มย้อนกลับ"},
  {id:"x2xl", g:"conv",   c:"--c-x2xl",  ic:"x2xl",  t:"PDF → Excel",   s:"ตรวจจับตารางในไฟล์ PDF แล้วบันทึกเป็น .xlsx หรือ .csv",d:"อ่านพิกัดตัวอักษรเพื่อจับเป็นตาราง ปรับความไวได้ ตัวเลขนำไปคำนวณต่อใน Excel ได้"},
  {id:"x2wd", g:"conv",   c:"--c-x2wd",  ic:"x2wd",  t:"PDF → Word",    s:"แปลงเป็นเอกสาร .doc แก้ไขได้ คงหัวข้อและย่อหน้า",d:"เลือกได้ทั้งโหมดข้อความไหลและโหมดคงตาราง พร้อมดูตัวอย่างก่อนบันทึก"},
- {id:"studio", g:"img", c:"--c-studio",ic:"studio",t:"Image Studio ✨",s:"ครอบตัด · ปรับขนาด · ลบพื้นหลัง · ลบวัตถุ · รวมรูปเป็น PDF · แปลงไฟล์ · ย่อไฟล์ ในหน้าเดียว",d:"แก้รูปต่อเนื่องหลายขั้นตอนบนรูปเดิม ไม่ต้องอัปโหลดซ้ำ เสร็จเมื่อไหร่ดาวน์โหลดได้ทันที"}
+ {id:"studio", g:"img", c:"--c-studio",ic:"studio",t:"Image Studio ✨",s:"ครอบตัด · ปรับขนาด · ลบพื้นหลัง · ลบวัตถุ · รวมรูปเป็น PDF · แปลงไฟล์ · ลดขนาดรูป ในหน้าเดียว",d:"แก้รูปต่อเนื่องหลายขั้นตอนบนรูปเดิม ไม่ต้องอัปโหลดซ้ำ เสร็จเมื่อไหร่ดาวน์โหลดได้ทันที"}
 ];
 const grid=$("#grid");
 
@@ -858,7 +858,7 @@ const CATS=[
    ic:'<path d="M6.2 2.8h6.6L18.2 8.2v12.1a.9.9 0 0 1-.9.9H6.2a.9.9 0 0 1-.9-.9V3.7a.9.9 0 0 1 .9-.9z"/><path d="M12.8 2.8v5.4h5.4"/>'},
   {g:"conv",t:"แปลงไฟล์",    c:"--c-x2xl", s:"PDF กับ Excel Word รูปภาพ ข้อความ",
    ic:'<path d="M20.4 10.4a8.4 8.4 0 0 1-12.6 7"/><path d="M3.6 13.6a8.4 8.4 0 0 1 12.6-7"/><path d="m20.6 6.6.2 3.9-3.9.2"/><path d="m3.4 17.4-.2-3.9 3.9-.2"/>'},
-  {g:"img", t:"รูปภาพ",      c:"--c-conv", s:"ขยาย/ปรับขนาดภาพ แปลงนามสกุล ลบพื้นหลัง ลบ/ย้ายวัตถุ",
+  {g:"img", t:"รูปภาพ",      c:"--c-conv", s:"ครอบตัด ปรับขนาด ลบพื้นหลัง ลบวัตถุ ลดขนาดรูป ในหน้าเดียว",
    ic:'<path d="M3.4 5.2h17.2v13.6H3.4z"/><circle cx="8.4" cy="10" r="1.6"/><path d="m3.4 16.4 5-4.4 3.8 3.2 3-2.4 5.4 4.2"/>'}
 ];
 
@@ -2390,7 +2390,7 @@ BUILD.studio=function(body){
     ["erase","ลบวัตถุ","--c-erase","erase"],
     ["combine","รวมรูปเป็น PDF","--c-merge","merge"],
     ["convert","แปลง/ดาวน์โหลด","--c-conv","conv"],
-    ["shrink","ย่อไฟล์","--c-shrink","shrink"]
+    ["shrink","ลดขนาดรูปภาพ","--c-shrink","shrink"]
   ];
   MODES.forEach((m,i)=>{
     const b=el("button","st-tab");b.dataset.m=m[0];b.title="กด "+(i+1);
@@ -2722,33 +2722,77 @@ BUILD.studio=function(body){
     panelR.appendChild(dl);panelR.appendChild(useIt);
   }
 
-  /* ================= ย่อไฟล์ ================= */
+  /* ================= ลดขนาดรูปภาพ ================= */
   function buildShrink(){
-    stage.innerHTML='<div class="note">ตัวอย่างขนาดไฟล์จะคำนวณตอนกดดาวน์โหลด</div>';
+    const cv=el("canvas","st-canvas");stage.appendChild(cv);
+    const sc0=Math.min(1,(document.body.classList.contains("st-wide")?720:420)/workC.width,(document.body.classList.contains("st-wide")?720:420)/workC.height);
+    cv.width=Math.round(workC.width*sc0);cv.height=Math.round(workC.height*sc0);
+    cv.getContext("2d").drawImage(workC,0,0,cv.width,cv.height);
     panelR.innerHTML=
       '<label class="f">ขนาดไฟล์เป้าหมาย</label><select id="tg">'+
-      '<option value="100">ไม่เกิน 100 KB</option><option value="300" selected>ไม่เกิน 300 KB</option>'+
-      '<option value="500">ไม่เกิน 500 KB</option><option value="1024">ไม่เกิน 1 MB</option>'+
-      '<option value="0">ไม่กำหนด</option></select>'+
+      '<option value="100">ไม่เกิน 100 KB — แนบฟอร์มราชการ</option><option value="300" selected>ไม่เกิน 300 KB — แนบอีเมล (แนะนำ)</option>'+
+      '<option value="500">ไม่เกิน 500 KB</option><option value="1024">ไม่เกิน 1 MB</option><option value="2048">ไม่เกิน 2 MB</option>'+
+      '<option value="0">ไม่กำหนด — ใช้คุณภาพที่ตั้งไว้</option></select>'+
       '<label class="f" style="margin-top:10px">ด้านยาวสุดไม่เกิน</label><select id="mx">'+
-      '<option value="0">คงขนาดเดิม</option><option value="1920" selected>1920 px</option>'+
-      '<option value="1280">1280 px</option><option value="800">800 px</option></select>'+
-      '<label class="f" style="margin-top:10px">รูปแบบไฟล์</label><select id="ext"><option value="jpg">JPG</option><option value="webp">WebP</option></select>';
-    const dl=el("button","st-action","ย่อและดาวน์โหลด");
-    dl.onclick=async()=>{
-      const target=(+$("#tg",panelR).value)*1024,maxSide=+$("#mx",panelR).value,ext=$("#ext",panelR).value;
-      let c=resizeCanvas(workC,maxSide);c=flatten(c,"#FFFFFF");
-      let q=0.85,blob=await canvasToBlob(c,ext,q),shrunk=0;
-      while(target&&blob.size>target&&(q>0.35||shrunk<5)){
-        if(q>0.35)q=Math.max(0.35,q-0.1);
-        else{const side=Math.max(c.width,c.height);c=resizeCanvas(c,Math.round(side*0.82));shrunk++;q=Math.min(0.8,0.85);}
-        blob=await canvasToBlob(c,ext,q);await tick();
+      '<option value="0">คงขนาดเดิม</option><option value="2560">2560 px</option><option value="1920" selected>1920 px</option>'+
+      '<option value="1280">1280 px</option><option value="800">800 px</option><option value="custom">กำหนดเอง…</option></select>'+
+      '<div id="cxw" style="display:none;margin-top:6px"><div class="row"><input type="number" id="cw" min="1" max="10000" style="width:0;flex:1"><span>×</span><input type="number" id="ch" min="1" max="10000" style="width:0;flex:1"><span>px</span></div>'+
+      '<label class="chk" style="margin-top:6px"><input type="checkbox" id="lk" checked> ล็อกสัดส่วนเดิม (ไม่ติ๊ก = กำหนดกว้าง×สูงเองทั้งสองด้าน)</label></div>'+
+      '<label class="f" style="margin-top:10px">รูปแบบไฟล์</label><select id="ext"><option value="jpg">JPG — เปิดได้ทุกที่</option><option value="webp">WebP — เล็กกว่า JPG ราว 30%</option></select>'+
+      '<label class="f" style="margin-top:10px">คุณภาพเริ่มต้น <b id="qv">85%</b></label><input type="range" id="q" min="40" max="95" value="85">'+
+      '<div class="note on" id="res" style="margin-top:12px;display:block">กำลังคำนวณขนาดไฟล์…</div>';
+    const q=$("#q",panelR);q.oninput=()=>{$("#qv",panelR).textContent=q.value+"%";run();};
+    ["tg","ext"].forEach(id=>$("#"+id,panelR).onchange=()=>run());
+    const cwI=$("#cw",panelR),chI=$("#ch",panelR),lk=$("#lk",panelR),arW=workC.width/workC.height;
+    cwI.value=workC.width;chI.value=workC.height;
+    $("#mx",panelR).onchange=()=>{$("#cxw",panelR).style.display=$("#mx",panelR).value==="custom"?"":"none";run();};
+    cwI.oninput=()=>{if(lk.checked&&+cwI.value>0)chI.value=Math.max(1,Math.round(cwI.value/arW));run();};
+    chI.oninput=()=>{if(lk.checked&&+chI.value>0)cwI.value=Math.max(1,Math.round(chI.value*arW));run();};
+    lk.onchange=()=>{if(lk.checked&&+cwI.value>0)chI.value=Math.max(1,Math.round(cwI.value/arW));run();};
+    let result=null,seq=0;
+    async function compute(){
+      const target=(+$("#tg",panelR).value)*1024,ext=$("#ext",panelR).value,q0=+q.value/100;
+      const custom=$("#mx",panelR).value==="custom",maxSide=custom?0:+$("#mx",panelR).value;
+      let c;
+      if(custom){
+        const cw=Math.max(1,Math.min(10000,Math.round(+$("#cw",panelR).value)||workC.width)),chh=Math.max(1,Math.min(10000,Math.round(+$("#ch",panelR).value)||workC.height));
+        c=el("canvas");c.width=cw;c.height=chh;const cx=c.getContext("2d");cx.imageSmoothingQuality="high";cx.drawImage(workC,0,0,cw,chh);
+        c=flatten(c,"#FFFFFF");
+      }else c=flatten(resizeCanvas(workC,maxSide),"#FFFFFF");
+      let quality=q0,blob=await canvasToBlob(c,ext,quality),shrunk=0;
+      while(target&&blob.size>target&&(quality>0.35||shrunk<5)){
+        if(quality>0.35)quality=Math.max(0.35,quality-0.1);
+        else{c=resizeCanvas(c,Math.round(Math.max(c.width,c.height)*0.82));shrunk++;quality=Math.min(0.8,q0);}
+        blob=await canvasToBlob(c,ext,quality);await tick();
       }
-      save(blob,stem(fileName)+"_เล็ก."+ext);
-      const old=dl.textContent;dl.textContent="ดาวน์โหลดแล้ว ("+fmt(blob.size)+")";
-      setTimeout(()=>dl.textContent=old,2200);
+      return{blob:blob,ext:ext,w:c.width,h:c.height,ok:!target||blob.size<=target};
+    }
+    let timer=null;
+    function run(){
+      const my=++seq;result=null;dl.disabled=true;
+      $("#res",panelR).textContent="กำลังคำนวณขนาดไฟล์…";
+      clearTimeout(timer);
+      timer=setTimeout(async()=>{
+        try{
+          const r=await compute();if(my!==seq)return;
+          result=r;dl.disabled=false;
+          $("#res",panelR).textContent="ผลลัพธ์: "+r.w+"×"+r.h+" px · ประมาณ "+fmt(r.blob.size)+
+            (r.ok?"":" (ยังเกินเป้าหมาย ลองเพิ่มการย่อด้านยาวสุด)");
+        }catch(e){if(my===seq)$("#res",panelR).textContent="คำนวณไม่สำเร็จ: "+(e.message||"ลองใหม่อีกครั้ง");}
+      },250);
+    }
+    const dl=el("button","st-action","ดาวน์โหลดรูปที่ย่อแล้ว");
+    dl.onclick=()=>{if(result)save(result.blob,stem(fileName)+"_เล็ก."+result.ext);};
+    const useIt=el("a",null,"หรือใช้ผลลัพธ์นี้ต่อในสตูดิโอ (ไม่ดาวน์โหลด)");
+    useIt.href="javascript:void(0)";useIt.style.cssText="display:block;margin-top:10px;font-size:12.5px";
+    useIt.onclick=async()=>{
+      if(!result)return;
+      workC=await blobToCanvas(result.blob,fileName);
+      pushHistory("ลดขนาด "+fmt(result.blob.size));
+      selectMode("shrink");
     };
-    panelR.appendChild(dl);
+    panelR.appendChild(dl);panelR.appendChild(useIt);
+    run();
   }
 
   /* ================= รวมรูปหลายใบเป็นไฟล์ PDF เดียว ================= */
