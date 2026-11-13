@@ -26,7 +26,7 @@
   --brand:#4B31E0; --brand-soft:#EDE9FF; --logo-acc:#00B8D4;
   --c-merge:#4B31E0; --c-split:#E0553D; --c-pages:#0F9B6C; --c-img:#D98A00;
   --c-render:#1585DE; --c-mark:#8B46D9; --c-num:#D63A6A; --c-conv:#0E8C93; --c-bg:#5E7C16; --c-zip:#B0430E; --c-lock:#2F4B9B; --c-crop:#8A6A00; --c-text:#0C6E5B; --c-edit:#7A2FBF;
-  --c-x2xl:#1D7A46; --c-x2wd:#1B4F9C; --c-shrink:#C2410C; --c-erase:#A1339B; --c-up:#4B2FBF; --c-studio:#0EA5A0;
+  --c-shrink:#C2410C; --c-erase:#A1339B; --c-up:#4B2FBF; --c-studio:#0EA5A0;
   --ok:#0F9B6C; --err:#D64545;
   --shadow:0 1px 2px rgba(22,19,31,.06),0 8px 24px -12px rgba(22,19,31,.18);
   --r:14px;
@@ -36,7 +36,7 @@
   --brand:#9583FF; --brand-soft:#282141; --logo-acc:#3BC3CA;
   --c-merge:#9583FF; --c-split:#FF8A72; --c-pages:#3FCB99; --c-img:#F0B429;
   --c-render:#54B0F5; --c-mark:#BE8CF0; --c-num:#FF7BA3; --c-conv:#3BC3CA; --c-bg:#A8CF3C; --c-zip:#FF9364; --c-lock:#7E9BFF; --c-crop:#E5C044; --c-text:#3ED0AC; --c-edit:#C08BFF;
-  --c-x2xl:#4ED88A; --c-x2wd:#7FB0FF; --c-shrink:#FF9A5C; --c-erase:#EE8CE6; --c-up:#A78BFF; --c-studio:#4DD9D0;
+  --c-shrink:#FF9A5C; --c-erase:#EE8CE6; --c-up:#A78BFF; --c-studio:#4DD9D0;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
 }
 *{box-sizing:border-box}
@@ -793,6 +793,7 @@ function actionBar(body,label,run){
     done:()=>{setTimeout(()=>{pr.classList.remove("on");$("i",pr).style.width="0";},600);},
     ok:m=>{nt.className="note ok on";nt.textContent="✅ "+m;},
     err:m=>{nt.className="note err on";nt.textContent="⚠️ "+m;},
+    msg:m=>{nt.className="note on";nt.textContent="⏳ "+m;},
     clear:()=>{nt.className="note";}
   };
   btn.onclick=async()=>{
@@ -824,8 +825,6 @@ const ICON={
   crop:'<path class="fl" d="M7.4 7.4h9.2v9.2H7.4z"/><path d="M7 2.6v14.4h14.4"/><path d="M2.6 7h14.4v14.4"/>',
   text:DF+DS+'<path d="M8.4 12.8h7.2M8.4 15.8h7.2M8.4 18.6h4.4"/>',
   edit:DS+'<path class="fl" d="M8 4.6h3.6v2.2H8z"/><path d="M8.4 12.4h4.2M8.4 15.4h2.8"/><path d="m19.8 12.6 1.8 1.8-5.8 5.8-2.3.5.5-2.3z"/>',
-  x2xl:DS+'<path class="fl" d="M7.8 12.2h8.4v7H7.8z"/><path d="M7.8 12.2h8.4v7H7.8z"/><path d="M7.8 15.7h8.4M12 12.2v7"/>',
-  x2wd:DS+'<path class="fl" d="M7.8 12.2h8.4v7H7.8z"/><path d="M7.8 12.2h8.4v7H7.8z"/><path d="m9.4 14 1.3 3.6 1.3-2.4 1.3 2.4L14.6 14"/>',
   up:'<path class="fl" d="M3.2 4.4h9.4v7.4H3.2z"/><path d="M3.2 4.4h9.4v7.4H3.2z"/><path d="m3.2 10.4 2.6-2.2 1.8 1.4 1.4-1"/><path d="M14.8 12.4h6v8.2h-6z" class="fl"/><path d="M14.8 12.4h6v8.2h-6z"/><path d="M17.8 18.4v-4M15.8 16.4l2-2 2 2"/>',
   erase:'<path class="fl" d="M2.8 4.6h12v9.2h-12z"/><path d="M2.8 4.6h12v9.2h-12z"/><path d="m2.8 12 3.4-3 2.4 2 1.8-1.4"/><circle cx="11.2" cy="7.6" r="1"/><path class="fl" d="m15.6 11.4 4.8 4.8-4 4H13l-1.8-1.8z"/><path d="m15.6 11.4 4.8 4.8-4 4H13l-1.8-1.8z"/><path d="m13.2 13.8 4.8 4.8"/><path d="M16.4 20.2h4.8"/>',
   shrink:'<path class="fl" d="M8.8 8.8h6.4v6.4H8.8z"/><path d="M8.8 8.8h6.4v6.4H8.8z"/><path d="M3.4 8V3.4h4.6"/><path d="m3.4 3.4 4.2 4.2"/><path d="M20.6 16v4.6H16"/><path d="m20.6 20.6-4.2-4.2"/>',
@@ -844,8 +843,6 @@ const TOOLS=[
  {id:"crop", g:"pdf",   c:"--c-crop",  ic:"crop",  t:"ครอบตัดหน้า",   s:"ลากกรอบเลือกพื้นที่เองได้ เห็นผลทันที",d:"ลากกรอบบนภาพตัวอย่างเพื่อเลือกพื้นที่ที่จะเก็บไว้"},
  {id:"text", g:"conv",   c:"--c-text",  ic:"text",  t:"ดึงข้อความ",    s:"คัดข้อความออกมาเป็นไฟล์ .txt หรือคัดลอก",  d:"ดึงข้อความไทย-อังกฤษออกจาก PDF พร้อมคัดลอกไปใช้ต่อ"},
  {id:"edit", g:"pdf",   c:"--c-edit",  ic:"edit",  t:"แก้ไข PDF",     s:"ปิดทับ · ไฮไลต์ · พิมพ์ข้อความ · เซ็นชื่อ · แปะรูป",d:"วางทับบนหน้าเดิมได้ทุกอย่าง ย้ายและย่อขยายได้ พร้อมปุ่มย้อนกลับ"},
- {id:"x2xl", g:"conv",   c:"--c-x2xl",  ic:"x2xl",  t:"PDF → Excel",   s:"ตรวจจับตารางในไฟล์ PDF แล้วบันทึกเป็น .xlsx หรือ .csv",d:"อ่านพิกัดตัวอักษรเพื่อจับเป็นตาราง ปรับความไวได้ ตัวเลขนำไปคำนวณต่อใน Excel ได้"},
- {id:"x2wd", g:"conv",   c:"--c-x2wd",  ic:"x2wd",  t:"PDF → Word",    s:"แปลงเป็นเอกสาร .doc แก้ไขได้ คงหัวข้อและย่อหน้า",d:"เลือกได้ทั้งโหมดข้อความไหลและโหมดคงตาราง พร้อมดูตัวอย่างก่อนบันทึก"},
  {id:"studio", g:"img", c:"--c-studio",ic:"studio",t:"Image Studio ✨",s:"ครอบตัด · ปรับขนาด · ลบพื้นหลัง · ลบวัตถุ · รวมรูปเป็น PDF · แปลงไฟล์ · ลดขนาดรูป ในหน้าเดียว",d:"แก้รูปต่อเนื่องหลายขั้นตอนบนรูปเดิม ไม่ต้องอัปโหลดซ้ำ เสร็จเมื่อไหร่ดาวน์โหลดได้ทันที"}
 ];
 const grid=$("#grid");
@@ -856,7 +853,7 @@ const CATS=[
    ic:'<path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"/>'},
   {g:"pdf", t:"จัดการ PDF",  c:"--c-merge",s:"รวม แยก จัดหน้า ลายน้ำ รหัสผ่าน",
    ic:'<path d="M6.2 2.8h6.6L18.2 8.2v12.1a.9.9 0 0 1-.9.9H6.2a.9.9 0 0 1-.9-.9V3.7a.9.9 0 0 1 .9-.9z"/><path d="M12.8 2.8v5.4h5.4"/>'},
-  {g:"conv",t:"แปลงไฟล์",    c:"--c-x2xl", s:"PDF กับ Excel Word รูปภาพ ข้อความ",
+  {g:"conv",t:"แปลงไฟล์",    c:"--c-conv", s:"PDF กับรูปภาพ ข้อความ",
    ic:'<path d="M20.4 10.4a8.4 8.4 0 0 1-12.6 7"/><path d="M3.6 13.6a8.4 8.4 0 0 1 12.6-7"/><path d="m20.6 6.6.2 3.9-3.9.2"/><path d="m3.4 17.4-.2-3.9 3.9-.2"/>'},
   {g:"img", t:"รูปภาพ",      c:"--c-conv", s:"ครอบตัด ปรับขนาด ลบพื้นหลัง ลบวัตถุ ลดขนาดรูป ในหน้าเดียว",
    ic:'<path d="M3.4 5.2h17.2v13.6H3.4z"/><circle cx="8.4" cy="10" r="1.6"/><path d="m3.4 16.4 5-4.4 3.8 3.2 3-2.4 5.4 4.2"/>'}
@@ -1982,296 +1979,9 @@ BUILD.edit=function(body){
 
 
 /* ═══════════════════════════════════════════════════════════════════
-   ส่วนเพิ่มเติม: PDF → Excel · PDF → Word · ย่อขนาดไฟล์รูป
+   ส่วนเพิ่มเติม: ย่อขนาดไฟล์รูป
    (ทำงานออฟไลน์ทั้งหมด ใช้ pdf.js + JSZip ที่ฝังอยู่ในไฟล์นี้แล้ว)
    ═══════════════════════════════════════════════════════════════════ */
-
-/* ---------- ตัวช่วยตรวจจับตารางจากพิกัดตัวอักษรใน PDF ---------- */
-const tbMedian=a=>{const s=a.slice().sort((x,y)=>x-y);return s.length?s[Math.floor(s.length/2)]:0;};
-/* จัดชิ้นข้อความเป็นแถวตามพิกัด y */
-function tbRows(items){
-  if(!items.length)return[];
-  const med=tbMedian(items.map(i=>i.h))||10, tol=Math.max(2,med*0.5);
-  const sorted=items.slice().sort((a,b)=>(b.y-a.y)||(a.x-b.x));
-  const rows=[];let cur=[sorted[0]];
-  for(let i=1;i<sorted.length;i++){
-    const it=sorted[i], refY=cur.reduce((s,x)=>s+x.y,0)/cur.length;
-    if(Math.abs(it.y-refY)<=tol)cur.push(it);else{rows.push(cur);cur=[it];}
-  }
-  rows.push(cur);
-  return rows.map(r=>r.sort((a,b)=>a.x-b.x));
-}
-/* รวมชิ้นที่ต่อเนื่องกันในบรรทัดเดียวเป็นเซลล์เดียว เช่น ชื่อ + นามสกุล */
-function tbMerge(row,gapTol){
-  const out=[];
-  for(let i=0;i<row.length;i++){
-    const it=row[i], last=out[out.length-1];
-    if(last){
-      const gap=it.x-(last.x+last.w);
-      if(gap<=gapTol){last.s+=(gap>0.8?" ":"")+it.s;last.w=(it.x+it.w)-last.x;last.h=Math.max(last.h,it.h);continue;}
-    }
-    out.push({s:it.s,x:it.x,y:it.y,w:it.w,h:it.h,f:it.f});
-  }
-  return out;
-}
-/* หาเส้นคอลัมน์จากตำแหน่ง x ที่ซ้ำกันหลายแถว และตัดคอลัมน์ที่ชิดกันเกินไป */
-function tbCols(rows,tol,minRatio){
-  const xs=[];rows.forEach(r=>r.forEach(it=>xs.push(it.x)));
-  if(!xs.length)return[];
-  xs.sort((a,b)=>a-b);
-  const cl=[];let cur=[xs[0]];
-  for(let i=1;i<xs.length;i++){
-    if(xs[i]-cur[cur.length-1]<=tol)cur.push(xs[i]);else{cl.push(cur);cur=[xs[i]];}
-  }
-  cl.push(cur);
-  const minN=Math.max(2,Math.ceil(rows.length*minRatio));
-  const keep=[];
-  cl.filter(c=>c.length>=minN).map(c=>({x:Math.min.apply(null,c),n:c.length})).forEach(c=>{
-    const last=keep[keep.length-1];
-    if(last&&c.x-last.x<22){if(c.n>last.n)keep[keep.length-1]=c;}
-    else keep.push(c);
-  });
-  return keep.map(c=>c.x);
-}
-function tbTable(rows,cols,tol){
-  if(!cols.length)return[];
-  return rows.map(r=>{
-    const cells=new Array(cols.length).fill("");
-    r.forEach(it=>{
-      let ci=0;
-      for(let i=0;i<cols.length;i++)if(it.x>=cols[i]-tol)ci=i;
-      cells[ci]=cells[ci]?cells[ci]+" "+it.s.trim():it.s.trim();
-    });
-    return cells;
-  }).filter(r=>r.some(c=>c!==""));
-}
-/* แปลงข้อความเป็นตัวเลขเมื่อควรเป็นตัวเลข แต่คงรหัส/เบอร์โทรที่ขึ้นต้นด้วย 0 */
-function tbVal(v){
-  const t=String(v).trim();
-  if(!t)return "";
-  if(/^0\d+$/.test(t))return t;
-  if(/^-?[\d,]+(\.\d+)?$/.test(t)&&/\d/.test(t))return Number(t.replace(/,/g,""));
-  return t;
-}
-/* ดึงชิ้นข้อความพร้อมพิกัดจากหน้า PDF */
-async function tbItems(pg){
-  const tc=await pg.getTextContent();
-  const items=[];
-  tc.items.forEach(it=>{
-    if(!it.str||!it.str.trim())return;
-    items.push({s:it.str,x:it.transform[4],y:it.transform[5],
-      w:it.width||0,h:it.height||Math.abs(it.transform[3])||10,
-      f:(tc.styles&&tc.styles[it.fontName]&&tc.styles[it.fontName].fontFamily)||""});
-  });
-  return items;
-}
-/* หน้า → ตาราง */
-function tbPage(items,opt){
-  const med=tbMedian(items.map(i=>i.h))||10;
-  const rows=tbRows(items).map(r=>tbMerge(r,med*opt.gap));
-  const cols=tbCols(rows,opt.tol,opt.strict);
-  return {rows:rows,cols:cols,table:tbTable(rows,cols,opt.tol),med:med};
-}
-
-/* ---------- ตัวสร้างไฟล์ .xlsx จริง (ไม่ต้องพึ่งไลบรารีภายนอก) ---------- */
-function mkXlsx(sheets){
-  const xe=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  const colName=n=>{let s="";n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;};
-  const used={},names=sheets.map((s,i)=>{
-    let nm=String(s.name||("Sheet"+(i+1))).replace(/[\[\]\*\/\\\?:]/g,"-").slice(0,31)||("Sheet"+(i+1));
-    const base=nm;let k=2;while(used[nm]){nm=base.slice(0,28)+"_"+k;k++;}
-    used[nm]=1;return nm;
-  });
-  const zip=new JSZip();
-  zip.file("[Content_Types].xml",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
-    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
-    '<Default Extension="xml" ContentType="application/xml"/>'+
-    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
-    sheets.map((s,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join("")+
-    '</Types>');
-  zip.file("_rels/.rels",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
-    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
-  zip.file("xl/workbook.xml",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-    '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+
-    names.map((n,i)=>'<sheet name="'+xe(n)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join("")+'</sheets></workbook>');
-  zip.file("xl/_rels/workbook.xml.rels",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
-    sheets.map((s,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join("")+'</Relationships>');
-  sheets.forEach((s,i)=>{
-    let x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
-    s.rows.forEach((r,ri)=>{
-      x+='<row r="'+(ri+1)+'">';
-      r.forEach((v,ci)=>{
-        if(v===""||v===null||v===undefined)return;
-        const ref=colName(ci)+(ri+1);
-        if(typeof v==="number"&&isFinite(v))x+='<c r="'+ref+'"><v>'+v+'</v></c>';
-        else x+='<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+xe(v)+'</t></is></c>';
-      });
-      x+='</row>';
-    });
-    zip.file("xl/worksheets/sheet"+(i+1)+".xml",x+'</sheetData></worksheet>');
-  });
-  return zip.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
-}
-/* ตัวสร้างไฟล์ .doc ที่ Word / Google Docs เปิดได้ */
-function mkDoc(innerHtml,title){
-  const he=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  const html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'+
-    '<head><meta charset="utf-8"><title>'+he(title)+'</title>'+
-    '<style>@page{size:A4;margin:2cm}body{font-family:"TH Sarabun New","Sarabun",sans-serif;font-size:16pt;line-height:1.6}'+
-    'table{border-collapse:collapse;width:100%}td,th{border:1px solid #888;padding:4pt 6pt}h2{font-size:20pt}h3{font-size:18pt}</style></head><body>'+innerHtml+'</body></html>';
-  return new Blob(["\ufeff"+html],{type:"application/msword"});
-}
-/* ตารางพรีวิวในหน้าเว็บ */
-function tbPreview(tbl,cap){
-  cap=cap||60;
-  const he=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  const head=tbl[0]||[];
-  return '<div style="overflow:auto;max-height:340px;border:1px solid var(--line);border-radius:12px">'+
-    '<table style="border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap"><thead><tr>'+
-    head.map((h,i)=>'<th style="position:sticky;top:0;background:var(--surface);border-bottom:2px solid var(--line);padding:7px 10px;text-align:left">'+(he(h)||("คอลัมน์ "+(i+1)))+'</th>').join("")+
-    '</tr></thead><tbody>'+
-    tbl.slice(1,cap).map(r=>'<tr>'+head.map((_,c)=>'<td style="border-bottom:1px solid var(--line);padding:6px 10px">'+he(r[c])+'</td>').join("")+'</tr>').join("")+
-    '</tbody></table></div>'+
-    (tbl.length>cap?'<div style="font-size:12px;color:var(--muted);margin-top:8px">แสดง '+cap+' แถวแรก · ไฟล์ที่บันทึกมีครบทุกแถว</div>':"");
-}
-
-/* ---------- 15) PDF → EXCEL ---------- */
-BUILD.x2xl=function(body){
-  let file=null,total=0;
-  dropzone(body,"application/pdf",false,async fs=>{
-    file=fs[0];
-    try{const d=await loadPdf(await bufOf(file));total=d.getPageCount();
-      info.textContent="📄 "+file.name+" · "+total+" หน้า";ui.enable(true);ui.clear();}
-    catch(e){info.textContent="";ui.err(e.message);ui.enable(false);}
-  });
-  const info=el("div","badge");info.style.marginTop="12px";body.appendChild(info);
-  const o=el("div","opts two");
-  o.innerHTML='<div><label class="f">ช่วงหน้า</label><input type="text" id="rg" value="ทั้งหมด" placeholder="ทั้งหมด หรือ 1-5, 8"></div>'+
-    '<div><label class="f">การจัดชีต</label><select id="sh"><option value="page">แยกชีตตามหน้า</option><option value="one">รวมทุกหน้าไว้ชีตเดียว</option></select></div>'+
-    '<div><label class="f">ความไวการแยกคอลัมน์</label><select id="tol"><option value="8">ละเอียด — แยกคอลัมน์ถี่</option><option value="14" selected>ปกติ (แนะนำ)</option><option value="24">หยาบ — คอลัมน์น้อยลง</option></select></div>'+
-    '<div><label class="f">การรวมข้อความที่ติดกัน</label><select id="gap"><option value="1">น้อย — แยกชิ้นมาก</option><option value="1.5" selected>ปกติ (แนะนำ)</option><option value="2.5">มาก — รวมเป็นเซลล์เดียวง่ายขึ้น</option></select></div>'+
-    '<div><label class="f">ความเข้มการตรวจจับคอลัมน์</label><select id="st"><option value="0.25">ผ่อน — ยอมรับคอลัมน์ที่พบน้อย</option><option value="0.4" selected>ปกติ (แนะนำ)</option><option value="0.6">เข้ม — เฉพาะคอลัมน์ชัดเจน</option></select></div>'+
-    '<div><label class="f">รูปแบบไฟล์ที่บันทึก</label><select id="fm"><option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV (.csv)</option></select></div>';
-  body.appendChild(o);
-  body.appendChild(el("div","warn","ℹ️ ใช้ได้กับ PDF ที่มีข้อความจริง ไม่ใช่ไฟล์สแกน · ตัวเลขจะถูกแปลงให้คำนวณได้ใน Excel ส่วนรหัสและเบอร์โทรที่ขึ้นต้นด้วย 0 จะเก็บเป็นข้อความ"));
-  const prev=el("div");prev.style.marginTop="14px";prev.style.display="none";body.appendChild(prev);
-  const ui=actionBar(body,"แปลงเป็น Excel",async(u)=>{
-    const opt={tol:+$("#tol",o).value,gap:+$("#gap",o).value,strict:+$("#st",o).value};
-    const bytes=await bufOf(file);
-    const doc=await pdfjsLib.getDocument({data:bytes.slice(0)}).promise;
-    const rgv=$("#rg",o).value.trim();
-    const idx=(!rgv||/^(ทั้งหมด|all)$/i.test(rgv))?Array.from({length:doc.numPages},(_,i)=>i):parseRange(rgv,doc.numPages);
-    const one=$("#sh",o).value==="one", sheets=[], merged=[];
-    let rowCount=0,maxCol=0,firstTable=null;
-    for(let k=0;k<idx.length;k++){
-      const items=await tbItems(await doc.getPage(idx[k]+1));
-      const r=tbPage(items,opt);
-      if(r.table.length){
-        const data=r.table.map(row=>row.map(tbVal));
-        rowCount+=data.length;maxCol=Math.max(maxCol,r.cols.length);
-        if(!firstTable)firstTable=r.table;
-        if(one){if(merged.length)merged.push([]);merged.push(["— หน้า "+(idx[k]+1)+" —"]);merged.push.apply(merged,data);}
-        else sheets.push({name:"หน้า "+(idx[k]+1),rows:data});
-      }
-      u.prog((k+1)/idx.length);await tick();
-    }
-    if(one&&merged.length)sheets.push({name:"ทั้งหมด",rows:merged});
-    if(!sheets.length)throw new Error("ตรวจไม่พบข้อความในหน้าที่เลือก — ถ้าเป็นเอกสารสแกน ให้แปลงเป็นรูปแล้วพิมพ์ข้อมูลเอง หรือใช้โปรแกรม OCR");
-    prev.innerHTML='<label class="f">ตารางที่ตรวจจับได้ (ตัวอย่างหน้าแรก)</label>'+tbPreview(firstTable);
-    prev.style.display="";
-    const nm=(nameBox&&nameBox.value.trim())||stem(file.name)+"_ตาราง";
-    if($("#fm",o).value==="csv"){
-      const rows=one?merged:sheets[0].rows;
-      const csv=rows.map(r=>r.map(v=>{
-        const s=String(v==null?"":v);
-        return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
-      }).join(",")).join("\r\n");
-      save(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),nm+".csv");
-      u.ok("แปลงแล้ว "+rowCount+" แถว · บันทึกเป็น CSV — ดาวน์โหลดแล้ว");
-    }else{
-      save(await mkXlsx(sheets),nm+".xlsx");
-      u.ok("แปลงแล้ว "+sheets.length+" ชีต · "+rowCount+" แถว · สูงสุด "+maxCol+" คอลัมน์ — ดาวน์โหลดแล้ว");
-    }
-  });
-};
-
-/* ---------- 16) PDF → WORD ---------- */
-BUILD.x2wd=function(body){
-  let file=null;
-  dropzone(body,"application/pdf",false,fs=>{
-    file=fs[0];info.textContent="📄 "+file.name+" · "+fmt(file.size);ui.enable(true);ui.clear();prev.style.display="none";
-  });
-  const info=el("div","badge");info.style.marginTop="12px";body.appendChild(info);
-  const o=el("div","opts two");
-  o.innerHTML='<div><label class="f">ช่วงหน้า</label><input type="text" id="rg" value="ทั้งหมด" placeholder="ทั้งหมด หรือ 1-5, 8"></div>'+
-    '<div><label class="f">รูปแบบเอกสาร</label><select id="md"><option value="flow">ข้อความไหล — จดหมาย/บันทึกข้อความ</option><option value="table">คงตาราง — ไฟล์ที่เป็นตารางเป็นหลัก</option></select></div>'+
-    '<div><label class="f">การแบ่งย่อหน้า</label><select id="pa"><option value="1.4">ถี่ — แยกย่อหน้าง่าย</option><option value="1.75" selected>ปกติ (แนะนำ)</option><option value="2.4">ห่าง — รวมเป็นย่อหน้าใหญ่</option></select></div>'+
-    '<div><label class="f">ตรวจจับหัวข้อจากขนาดตัวอักษร</label><select id="hd"><option value="1">เปิด — ทำหัวข้อให้อัตโนมัติ</option><option value="0">ปิด — เป็นย่อหน้าธรรมดาทั้งหมด</option></select></div>'+
-    '<div><label class="f">ใส่หมายเลขหน้าคั่น</label><select id="mk"><option value="0">ไม่ใส่</option><option value="1">ใส่ “— หน้า N —”</option></select></div>'+
-    '<div><label class="f">ความไวการแยกคอลัมน์ (โหมดตาราง)</label><select id="tol"><option value="8">ละเอียด</option><option value="14" selected>ปกติ</option><option value="24">หยาบ</option></select></div>';
-  body.appendChild(o);
-  body.appendChild(el("div","warn","ℹ️ ไฟล์ .doc ที่ได้จะคงข้อความ หัวข้อ ย่อหน้า และตาราง แต่ไม่คงตำแหน่งรูปภาพและหัว-ท้ายกระดาษ เพราะ PDF ไม่ได้เก็บโครงสร้างเอกสารไว้"));
-  const prev=el("div");prev.style.marginTop="14px";prev.style.display="none";body.appendChild(prev);
-  const ui=actionBar(body,"แปลงเป็น Word",async(u)=>{
-    const he=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-    const opt={tol:+$("#tol",o).value,gap:1.5,strict:0.4};
-    const mode=$("#md",o).value, paraMul=+$("#pa",o).value, useHead=$("#hd",o).value==="1", mark=$("#mk",o).value==="1";
-    const bytes=await bufOf(file);
-    const doc=await pdfjsLib.getDocument({data:bytes.slice(0)}).promise;
-    const rgv=$("#rg",o).value.trim();
-    const idx=(!rgv||/^(ทั้งหมด|all)$/i.test(rgv))?Array.from({length:doc.numPages},(_,i)=>i):parseRange(rgv,doc.numPages);
-    const parts=[];
-    for(let k=0;k<idx.length;k++){
-      const items=await tbItems(await doc.getPage(idx[k]+1));
-      let bodyHtml="";
-      if(items.length){
-        const med=tbMedian(items.map(i=>i.h))||10;
-        const rows=tbRows(items).map(r=>tbMerge(r,med*opt.gap));
-        let done=false;
-        if(mode==="table"){
-          const cols=tbCols(rows,opt.tol,opt.strict), tbl=tbTable(rows,cols,opt.tol);
-          if(cols.length>=2&&tbl.length>=2){
-            bodyHtml="<table>"+tbl.map((r,i)=>"<tr>"+r.map(c=>i===0?"<th>"+he(c)+"</th>":"<td>"+he(c)+"</td>").join("")+"</tr>").join("")+"</table>";
-            done=true;
-          }
-        }
-        if(!done){
-          const minX=Math.min.apply(null,rows.map(r=>r[0].x));
-          const out=[];let buf="",lastY=null;
-          const flush=()=>{if(buf.trim())out.push("<p>"+buf.trim()+"</p>");buf="";};
-          rows.forEach(r=>{
-            const text=r.map(it=>he(it.s.trim())).join(" ").replace(/\s+/g," ");
-            const maxH=Math.max.apply(null,r.map(it=>it.h));
-            const bold=r.some(it=>/bold|black|heavy/i.test(it.f||""));
-            const y=r[0].y, indent=r[0].x>minX+14, gap=lastY===null?0:Math.abs(lastY-y);
-            if(useHead&&maxH>=med*1.22){flush();out.push(maxH>=med*1.6?"<h2>"+text+"</h2>":"<h3>"+text+"</h3>");}
-            else{
-              if(lastY!==null&&(gap>med*paraMul||indent))flush();
-              buf+=(buf?" ":"")+(bold?"<b>"+text+"</b>":text);
-            }
-            lastY=y;
-          });
-          flush();
-          bodyHtml=out.join("\n");
-        }
-      }
-      if(bodyHtml)parts.push((parts.length?'<div style="page-break-before:always"></div>':"")+(mark?'<p style="color:#888;font-size:10pt">— หน้า '+(idx[k]+1)+' —</p>':"")+bodyHtml);
-      u.prog((k+1)/idx.length);await tick();
-    }
-    if(!parts.length)throw new Error("ไฟล์นี้ไม่มีข้อความที่คัดลอกได้ — น่าจะเป็นเอกสารสแกน");
-    const html=parts.join("\n");
-    prev.innerHTML='<label class="f">ตัวอย่างเอกสารที่แปลงได้</label>'+
-      '<div style="max-height:360px;overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:20px 24px;line-height:1.8">'+html+'</div>';
-    prev.style.display="";
-    const nm=(nameBox&&nameBox.value.trim())||stem(file.name)+"_Word";
-    save(mkDoc(html,nm),nm+".doc");
-    u.ok("แปลงแล้ว "+parts.length+" หน้า · เปิดแก้ไขใน Word ได้ทันที — ดาวน์โหลดแล้ว");
-  });
-};
 
 /* ---------- 17) ย่อขนาดไฟล์รูป (กำหนดขนาดเป้าหมายเป็น KB) ---------- */
 BUILD.shrink=function(body){
